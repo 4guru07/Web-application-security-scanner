@@ -25,20 +25,29 @@ class PassiveScanner:
     def run_full_scan(self):
         start_time = time.time()
         
-        # Standard Browser User-Agent
+        # Standard Browser User-Agent and Chrome Sec-Fetch Request Headers
         req_headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 SecureScan-Auditor/1.0'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Sec-Ch-Ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+            'Sec-Ch-Ua-Mobile': '?0',
+            'Sec-Ch-Ua-Platform': '"Windows"',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Upgrade-Insecure-Requests': '1'
         }
 
-        # 1. Fetch target response safely with HTTP fallback
+        # 1. Fetch target response safely with HTTP/HTTPS fallback
         try:
-            self.response = requests.get(self.target_url, headers=req_headers, timeout=10, allow_redirects=True, verify=False)
+            self.response = requests.get(self.target_url, headers=req_headers, timeout=12, allow_redirects=True, verify=False)
         except Exception as primary_error:
             # Fallback: If HTTPS failed, attempt plain HTTP connection
             if self.target_url.startswith('https://'):
                 fallback_url = 'http://' + self.target_url[8:]
                 try:
-                    self.response = requests.get(fallback_url, headers=req_headers, timeout=10, allow_redirects=True)
+                    self.response = requests.get(fallback_url, headers=req_headers, timeout=12, allow_redirects=True)
                     self.target_url = fallback_url
                     self.parsed_url = urlparse(fallback_url)
                     self.hostname = self.parsed_url.hostname
@@ -52,8 +61,8 @@ class PassiveScanner:
                 'title': 'Target Connectivity Failure',
                 'category': 'Connectivity',
                 'severity': 'High',
-                'description': f'Failed to establish HTTP connection to target server. Target is down, unreachable, or blocking requests.',
-                'recommendation': 'Verify target URL, web server status, DNS resolution, and firewall rules.',
+                'description': 'Failed to establish HTTP/HTTPS connection to target server. Target is down, unreachable, or actively blocking requests.',
+                'recommendation': 'Verify target URL, web server status, DNS resolution, and firewall / WAF bot blocking rules.',
                 'details': f'Target URL: {self.target_url}'
             })
             duration = round(time.time() - start_time, 2)
@@ -172,7 +181,7 @@ class PassiveScanner:
         # HTTPS SSL Socket Validation
         try:
             context = ssl.create_default_context()
-            with socket.create_connection((self.hostname, self.port), timeout=5) as sock:
+            with socket.create_connection((self.hostname, self.port), timeout=6) as sock:
                 with context.wrap_socket(sock, server_hostname=self.hostname) as ssock:
                     cert = ssock.getpeercert()
                     issuer_dict = dict(x[0] for x in cert.get('issuer', []))
