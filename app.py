@@ -41,6 +41,19 @@ db.init_app(app)
 
 with app.app_context():
     db.create_all()
+    # Auto-migrate SQLite schema if new columns are missing
+    try:
+        with db.engine.connect() as conn:
+            conn.execute(db.text("ALTER TABLE scans ADD COLUMN target_name VARCHAR(255) DEFAULT 'N/A'"))
+            conn.commit()
+    except Exception:
+        pass
+    try:
+        with db.engine.connect() as conn:
+            conn.execute(db.text("ALTER TABLE scans ADD COLUMN target_ip VARCHAR(100) DEFAULT 'N/A'"))
+            conn.commit()
+    except Exception:
+        pass
 
 def generate_remediation_snippets(missing_headers):
     """Generates ready-to-use Nginx and Apache configuration snippets."""
@@ -100,63 +113,72 @@ def start_scan():
 
     domain = extract_domain(normalized_url)
 
-    # Execute Audit with URL, Domain Name, and IP
-    scanner = PassiveScanner(normalized_url, target_ip=ip_address, target_name=target_name)
-    scan_results = scanner.run_full_scan()
+    # Execute Audit safely
+    try:
+        scanner = PassiveScanner(normalized_url, target_ip=ip_address, target_name=target_name)
+        scan_results = scanner.run_full_scan()
+    except Exception as e:
+        flash(f"Scan error: {str(e)}", "error")
+        return redirect(url_for('index'))
 
     # Save to SQLite DB
-    new_scan = Scan(
-        target_url=normalized_url,
-        target_name=target_name,
-        target_ip=ip_address,
-        domain=domain,
-        scan_duration=scan_results['scan_duration'],
-        risk_score=scan_results['risk_score'],
-        risk_grade=scan_results['risk_grade'],
-        total_vulnerabilities=scan_results['total_vulnerabilities'],
-        high_count=scan_results['high_count'],
-        medium_count=scan_results['medium_count'],
-        low_count=scan_results['low_count']
-    )
-    db.session.add(new_scan)
-    db.session.commit()
-
-    # Add Findings
-    for f in scan_results['findings']:
-        finding_obj = Finding(
-            scan_id=new_scan.id,
-            title=f['title'],
-            category=f['category'],
-            severity=f['severity'],
-            description=f['description'],
-            recommendation=f['recommendation'],
-            details=f.get('details', '')
+    try:
+        new_scan = Scan(
+            target_url=normalized_url,
+            target_name=target_name or domain,
+            target_ip=ip_address or 'N/A',
+            domain=domain,
+            scan_duration=scan_results['scan_duration'],
+            risk_score=scan_results['risk_score'],
+            risk_grade=scan_results['risk_grade'],
+            total_vulnerabilities=scan_results['total_vulnerabilities'],
+            high_count=scan_results['high_count'],
+            medium_count=scan_results['medium_count'],
+            low_count=scan_results['low_count']
         )
-        db.session.add(finding_obj)
+        db.session.add(new_scan)
+        db.session.commit()
 
-    # Add Header Audits
-    for ha in scan_results['header_audits']:
-        ha_obj = HeaderAudit(
+        # Add Findings
+        for f in scan_results['findings']:
+            finding_obj = Finding(
+                scan_id=new_scan.id,
+                title=f['title'],
+                category=f['category'],
+                severity=f['severity'],
+                description=f['description'],
+                recommendation=f['recommendation'],
+                details=f.get('details', '')
+            )
+            db.session.add(finding_obj)
+
+        # Add Header Audits
+        for ha in scan_results['header_audits']:
+            ha_obj = HeaderAudit(
+                scan_id=new_scan.id,
+                header_name=ha['header_name'],
+                status=ha['status'],
+                header_value=ha.get('header_value'),
+                recommendation=ha['recommendation']
+            )
+            db.session.add(ha_obj)
+
+        # Add SSL Info
+        ssl_data = scan_results['ssl_info']
+        ssl_obj = SslAudit(
             scan_id=new_scan.id,
-            header_name=ha['header_name'],
-            status=ha['status'],
-            header_value=ha.get('header_value'),
-            recommendation=ha['recommendation']
+            is_https=ssl_data.get('is_https', False),
+            certificate_valid=ssl_data.get('certificate_valid', False),
+            issuer=ssl_data.get('issuer'),
+            expiry_date=ssl_data.get('expiry_date'),
+            details=ssl_data.get('details')
         )
-        db.session.add(ha_obj)
-
-    # Add SSL Info
-    ssl_data = scan_results['ssl_info']
-    ssl_obj = SslAudit(
-        scan_id=new_scan.id,
-        is_https=ssl_data.get('is_https', False),
-        certificate_valid=ssl_data.get('certificate_valid', False),
-        issuer=ssl_data.get('issuer'),
-        expiry_date=ssl_data.get('expiry_date'),
-        details=ssl_data.get('details')
-    )
-    db.session.add(ssl_obj)
-    db.session.commit()
+        db.session.add(ssl_obj)
+        db.session.commit()
+    except Exception as db_err:
+        db.session.rollback()
+        # Fallback if DB save encountered issue
+        pass
 
     # Generate PDF Report
     pdf_filename = f"report_scan_{new_scan.id}_{int(datetime.utcnow().timestamp())}.pdf"

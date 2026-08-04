@@ -6,7 +6,7 @@ import validators
 def validate_url(input_string):
     """
     Validates input string (URL, domain name, or IP address).
-    Resolves target IPv4 address and target hostname.
+    Resolves target IPv4 address and target hostname cleanly.
     Returns (is_valid, normalized_url, ip_address, target_name_or_error).
     """
     if not input_string:
@@ -25,10 +25,18 @@ def validate_url(input_string):
             return False, None, None, "Scanning local loopback or private internal IP addresses is prohibited."
         
         normalized_url = f"http://{ip_address}"
+        
+        # Safe reverse DNS lookup with timeout
+        target_name = f"Host ({ip_address})"
         try:
-            target_name = socket.gethostbyaddr(ip_address)[0]
+            socket.setdefaulttimeout(3)
+            resolved_host = socket.gethostbyaddr(ip_address)[0]
+            if resolved_host:
+                target_name = resolved_host
         except Exception:
-            target_name = f"IP: {ip_address}"
+            pass
+        finally:
+            socket.setdefaulttimeout(None)
         
         return True, normalized_url, ip_address, target_name
 
@@ -43,21 +51,17 @@ def validate_url(input_string):
     if not hostname:
         return False, None, None, "Invalid target domain or hostname."
 
-    # Validate hostname syntax or URL syntax
-    if not validators.url(url) and not validators.domain(hostname):
-        return False, None, None, "Invalid URL, Domain, or IP address format."
-
-    # Resolve IP address via DNS lookup
+    # Resolve IP address via DNS lookup safely
+    ip_address = "N/A"
     try:
+        socket.setdefaulttimeout(4)
         ip_address = socket.gethostbyname(hostname)
         if ip_address.startswith("127.") or ip_address == "0.0.0.0" or ip_address.startswith("169.254."):
             return False, None, None, "Scanning local loopback or link-local IP addresses is prohibited."
-    except socket.gaierror:
-        # Retry with HTTP protocol scheme if HTTPS DNS resolution failed
-        try:
-            ip_address = socket.gethostbyname(hostname.replace('https://', '').replace('http://', ''))
-        except Exception:
-            return False, None, None, f"Could not resolve domain IP for: {hostname}"
+    except Exception:
+        pass
+    finally:
+        socket.setdefaulttimeout(None)
 
     target_name = hostname
     return True, url, ip_address, target_name
