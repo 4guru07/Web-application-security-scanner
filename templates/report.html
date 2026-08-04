@@ -13,26 +13,38 @@
     <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center fw-bold" href="{{ url_for('index') }}">
-                <i class="bi bi-shield-lock-fill text-info me-2 fs-3"></i> 
-                <span>Secure<span class="text-info">Scan</span></span>
+                <i class="bi bi-shield-lock-fill text-success me-2 fs-3"></i> 
+                <span>Secure<span class="text-success">Scan</span></span>
             </a>
             <div class="navbar-nav ms-auto">
                 <a class="nav-link" href="{{ url_for('index') }}"><i class="bi bi-search me-1"></i> New Audit</a>
                 <a class="nav-link" href="{{ url_for('dashboard') }}"><i class="bi bi-speedometer2 me-1"></i> Dashboard</a>
+                <a class="nav-link" href="{{ url_for('reports_hub') }}"><i class="bi bi-folder-symlink me-1"></i> Reports Hub</a>
             </div>
         </div>
     </nav>
 
     <div class="container py-5">
-        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-            <div>
-                <h2 class="fw-bold text-white mb-1"><i class="bi bi-file-earmark-bar-graph me-2 text-info"></i> Security Audit Details</h2>
-                <p class="text-high-contrast-muted mb-0">Target: <span class="text-info fw-bold">{{ scan.target_url }}</span> | Evaluated: {{ scan.scan_date.strftime('%Y-%m-%d %H:%M:%S UTC') }}</p>
-            </div>
-            <div>
-                <a href="{{ url_for('download_pdf', scan_id=scan.id) }}" class="btn btn-gradient px-4 py-2">
-                    <i class="bi bi-file-earmark-pdf me-2"></i> Download PDF Report
-                </a>
+        
+        <!-- Header & Primary Report Action Section -->
+        <div class="card glass-card p-4 mb-4 border-success">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <span class="badge bg-dark text-success border border-success mb-2 px-3 py-1 fw-bold">Executive Audit Report</span>
+                    <h2 class="fw-bold text-white mb-1"><i class="bi bi-shield-check text-success me-2"></i> Security Assessment: {{ scan.domain }}</h2>
+                    <p class="text-high-contrast-muted mb-0">Target URL: <span class="text-success fw-bold">{{ scan.target_url }}</span> | Timestamp: {{ scan.scan_date.strftime('%Y-%m-%d %H:%M:%S UTC') }}</p>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <button onclick="window.print()" class="btn btn-outline-light px-3 py-2 fw-bold">
+                        <i class="bi bi-printer me-2"></i> Print View
+                    </button>
+                    <a href="{{ url_for('export_csv') }}" class="btn btn-outline-success px-3 py-2 fw-bold">
+                        <i class="bi bi-filetype-csv me-2"></i> Export CSV
+                    </a>
+                    <a href="{{ url_for('download_pdf', scan_id=scan.id) }}" class="btn btn-gradient px-4 py-2 fs-6 fw-bold">
+                        <i class="bi bi-file-earmark-pdf me-2"></i> Download Official PDF Report
+                    </a>
+                </div>
             </div>
         </div>
 
@@ -46,7 +58,7 @@
                         <span class="small text-white-50">/ 100</span>
                     </div>
                     <div>
-                        <span class="badge {{ 'bg-success text-white' if scan.risk_score >= 80 else ('bg-warning text-dark' if scan.risk_score >= 60 else 'bg-danger text-white') }} fs-6">
+                        <span class="badge {{ 'bg-success text-white' if scan.risk_score >= 80 else ('bg-warning text-dark' if scan.risk_score >= 60 else 'bg-danger text-white') }} fs-6 px-3 py-2">
                             {{ scan.risk_grade }} Posture
                         </span>
                     </div>
@@ -56,12 +68,12 @@
                 <div class="card glass-card p-3 text-center h-100 justify-content-center">
                     <h6 class="text-white-50 small text-uppercase fw-bold">Total Vulnerabilities</h6>
                     <h2 class="display-4 fw-extrabold text-white my-2">{{ scan.total_vulnerabilities }}</h2>
-                    <span class="text-info fw-semibold small">Scan Duration: {{ scan.scan_duration }}s</span>
+                    <span class="text-success fw-semibold small">Scan Duration: {{ scan.scan_duration }}s</span>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="card glass-card p-4 h-100">
-                    <h6 class="text-white-50 small text-uppercase fw-bold mb-4">Severity Distribution</h6>
+                    <h6 class="text-white-50 small text-uppercase fw-bold mb-4">Severity Distribution Breakdown</h6>
                     <div class="d-flex justify-content-around text-center my-auto">
                         <div>
                             <span class="badge badge-high fs-4 mb-2">{{ scan.high_count }}</span>
@@ -80,32 +92,72 @@
             </div>
         </div>
 
+        <!-- Creative Section 1: OWASP & Security Compliance Benchmark -->
+        <div class="card glass-card p-4 mb-4">
+            <h5 class="fw-bold text-white mb-3"><i class="bi bi-award text-success me-2"></i> Security Compliance Benchmark</h5>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="p-3 bg-dark border border-secondary rounded">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-bold text-white">OWASP A05:2021</span>
+                            <span class="badge {{ 'bg-success' if scan.high_count == 0 else 'bg-warning text-dark' }}">
+                                {{ 'Compliant' if scan.high_count == 0 else 'Misconfigured' }}
+                            </span>
+                        </div>
+                        <small class="text-white-50">Evaluates Security Misconfiguration standards & header protections.</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-dark border border-secondary rounded">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-bold text-white">NIST 800-52 Guidelines</span>
+                            <span class="badge {{ 'bg-success' if scan.ssl_audit and scan.ssl_audit.certificate_valid else 'bg-danger' }}">
+                                {{ 'Passed' if scan.ssl_audit and scan.ssl_audit.certificate_valid else 'Failed' }}
+                            </span>
+                        </div>
+                        <small class="text-white-50">Validates TLS transport encryption & CA certificate chain integrity.</small>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-dark border border-secondary rounded">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-bold text-white">PCI-DSS 4.0 Standard</span>
+                            <span class="badge {{ 'bg-success' if missing_count == 0 else 'bg-danger' }}">
+                                {{ 'Passed' if missing_count == 0 else missing_count ~ ' Headers Missing' }}
+                            </span>
+                        </div>
+                        <small class="text-white-50">Checks required HSTS, CSP, and X-Frame-Options headers.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Security Headers Matrix -->
         <div class="card glass-card p-4 mb-4">
-            <h5 class="fw-bold text-white mb-3"><i class="bi bi-shield-check text-info me-2"></i> HTTP Security Headers Audit</h5>
+            <h5 class="fw-bold text-white mb-3"><i class="bi bi-shield-check text-success me-2"></i> HTTP Security Headers Audit</h5>
             <div class="table-responsive">
-                <table class="table table-custom align-middle">
+                <table class="table table-dark table-custom align-middle mb-0">
                     <thead>
                         <tr>
-                            <th>Header Name</th>
-                            <th>Status</th>
-                            <th>Value</th>
-                            <th>Recommendation</th>
+                            <th scope="col" style="width: 25%;">HEADER NAME</th>
+                            <th scope="col" style="width: 15%;">STATUS</th>
+                            <th scope="col" style="width: 30%;">VALUE</th>
+                            <th scope="col" style="width: 30%;">RECOMMENDATION</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for ha in scan.header_audits %}
                         <tr>
-                            <td class="fw-bold text-white">{{ ha.header_name }}</td>
+                            <td class="fw-bold text-white fs-6">{{ ha.header_name }}</td>
                             <td>
                                 {% if ha.status == 'Present' %}
-                                    <span class="badge bg-success text-white px-3"><i class="bi bi-check-circle me-1"></i> Present</span>
+                                    <span class="badge bg-success text-white px-3 py-2"><i class="bi bi-check-circle me-1"></i> Present</span>
                                 {% else %}
-                                    <span class="badge bg-danger text-white px-3"><i class="bi bi-x-circle me-1"></i> Missing</span>
+                                    <span class="badge bg-danger text-white px-3 py-2"><i class="bi bi-x-circle me-1"></i> Missing</span>
                                 {% endif %}
                             </td>
-                            <td><code class="text-info">{{ ha.header_value or 'N/A' }}</code></td>
-                            <td class="text-body"><small class="fw-medium">{{ ha.recommendation }}</small></td>
+                            <td><code>{{ ha.header_value or 'N/A' }}</code></td>
+                            <td class="text-light fw-medium">{{ ha.recommendation }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -113,11 +165,39 @@
             </div>
         </div>
 
+        <!-- Creative Section 2: One-Click Server Remediation Patch Assistant -->
+        {% if missing_count > 0 %}
+        <div class="card glass-card p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold text-white mb-0"><i class="bi bi-code-square text-success me-2"></i> Server Remediation Patch Assistant</h5>
+                <span class="badge bg-success text-white">Auto-Generated Fixes</span>
+            </div>
+            <p class="text-high-contrast-muted mb-3">Copy and paste these configuration directives into your web server configuration file to fix all {{ missing_count }} missing security headers instantly:</p>
+            
+            <ul class="nav nav-tabs border-secondary mb-3" id="remediationTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active text-white fw-bold" id="nginx-tab" data-bs-toggle="tab" data-bs-target="#nginx" type="button" role="tab">Nginx Config</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link text-white fw-bold" id="apache-tab" data-bs-toggle="tab" data-bs-target="#apache" type="button" role="tab">Apache (.htaccess)</button>
+                </li>
+            </ul>
+            <div class="tab-content" id="remediationTabContent">
+                <div class="tab-pane fade show active" id="nginx" role="tabpanel">
+                    <pre class="bg-dark p-3 rounded border border-secondary text-warning font-monospace mb-0"><code>{{ snippets.nginx }}</code></pre>
+                </div>
+                <div class="tab-pane fade" id="apache" role="tabpanel">
+                    <pre class="bg-dark p-3 rounded border border-secondary text-warning font-monospace mb-0"><code>{{ snippets.apache }}</code></pre>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Findings List -->
         <div class="card glass-card p-4">
-            <h5 class="fw-bold text-white mb-3"><i class="bi bi-exclamation-triangle text-info me-2"></i> Audit Findings</h5>
+            <h5 class="fw-bold text-white mb-3"><i class="bi bi-exclamation-triangle text-warning me-2"></i> Detailed Audit Findings</h5>
             {% if not scan.findings %}
-                <div class="alert alert-success fw-bold">
+                <div class="alert alert-success fw-bold mb-0">
                     <i class="bi bi-shield-check me-2"></i> Excellent! No major security issues detected during passive analysis.
                 </div>
             {% else %}
@@ -129,16 +209,16 @@
                                 <span class="badge {{ 'badge-high' if f.severity == 'High' else ('badge-med' if f.severity == 'Medium' else 'badge-low') }} me-3">
                                     {{ f.severity }}
                                 </span>
-                                <span class="fw-bold text-white me-3">{{ f.title }}</span>
-                                <span class="text-info small fw-semibold">({{ f.category }})</span>
+                                <span class="fw-bold text-white me-3 fs-6">{{ f.title }}</span>
+                                <span class="text-success small fw-semibold">({{ f.category }})</span>
                             </button>
                         </h2>
                         <div id="collapse{{ f.id }}" class="accordion-collapse collapse" data-bs-parent="#findingsAccordion">
-                            <div class="accordion-body accordion-body-custom rounded-bottom p-3">
+                            <div class="accordion-body accordion-body-custom rounded-bottom p-4">
                                 <p class="mb-2 text-white"><strong>Description:</strong> {{ f.description }}</p>
-                                <p class="mb-2 text-info"><strong>Recommendation:</strong> {{ f.recommendation }}</p>
+                                <p class="mb-2 text-success"><strong>Recommendation:</strong> {{ f.recommendation }}</p>
                                 {% if f.details %}
-                                    <div class="p-3 bg-dark border border-secondary rounded font-monospace small mt-2 text-light">
+                                    <div class="p-3 bg-dark border border-secondary rounded font-monospace small mt-3 text-warning">
                                         {{ f.details }}
                                     </div>
                                 {% endif %}

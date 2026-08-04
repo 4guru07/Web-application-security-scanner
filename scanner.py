@@ -5,6 +5,10 @@ from datetime import datetime
 from urllib.parse import urlparse, urljoin
 import requests
 from bs4 import BeautifulSoup
+import urllib3
+
+# Suppress SSL warnings for auditing legacy/untrusted sites safely
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class PassiveScanner:
     def __init__(self, target_url):
@@ -16,26 +20,51 @@ class PassiveScanner:
         self.header_audits = []
         self.ssl_info = {}
         self.response = None
+        self.connection_failed = False
 
     def run_full_scan(self):
         start_time = time.time()
         
-        # 1. Fetch target response safely
+        # Standard Browser User-Agent
+        req_headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 SecureScan-Auditor/1.0'
+        }
+
+        # 1. Fetch target response safely with HTTP fallback
         try:
-            headers = {'User-Agent': 'SecureScan-Auditor/1.0'}
-            self.response = requests.get(self.target_url, headers=headers, timeout=8, allow_redirects=True)
-        except Exception as e:
+            self.response = requests.get(self.target_url, headers=req_headers, timeout=10, allow_redirects=True, verify=False)
+        except Exception as primary_error:
+            # Fallback: If HTTPS failed, attempt plain HTTP connection
+            if self.target_url.startswith('https://'):
+                fallback_url = 'http://' + self.target_url[8:]
+                try:
+                    self.response = requests.get(fallback_url, headers=req_headers, timeout=10, allow_redirects=True)
+                    self.target_url = fallback_url
+                    self.parsed_url = urlparse(fallback_url)
+                    self.hostname = self.parsed_url.hostname
+                    self.port = 80
+                except Exception:
+                    pass
+
+        if not self.response:
+            self.connection_failed = True
             self.findings.append({
                 'title': 'Target Connectivity Failure',
                 'category': 'Connectivity',
                 'severity': 'High',
-                'description': f'Failed to establish HTTP connection to target: {str(e)}',
-                'recommendation': 'Verify target URL, web server status, and firewall rules.',
-                'details': str(e)
+                'description': f'Failed to establish HTTP connection to target server. Target is down, unreachable, or blocking requests.',
+                'recommendation': 'Verify target URL, web server status, DNS resolution, and firewall rules.',
+                'details': f'Target URL: {self.target_url}'
             })
             duration = round(time.time() - start_time, 2)
-            score, grade = self._calculate_score()
-            return self._format_results(duration, score, grade)
+            return self._format_results(duration, 0, "Unreachable")
+
+        # Update parsed target URL if redirects occurred
+        if self.response.url:
+            self.target_url = self.response.url
+            self.parsed_url = urlparse(self.response.url)
+            self.hostname = self.parsed_url.hostname
+            self.port = self.parsed_url.port or (443 if self.parsed_url.scheme == 'https' else 80)
 
         # 2. HTTP Security Header Audit
         self._audit_security_headers()
@@ -67,7 +96,7 @@ class PassiveScanner:
             },
             'Strict-Transport-Security': {
                 'severity': 'High',
-                'desc': 'HTTP Strict Transport Security (HSTS) header is missing. HSTS enforces HTTPS connections.',
+                'desc': 'HTTP Strict Transport Security (HSTS) header is missing. HSTS enforces encrypted HTTPS connections.',
                 'rec': 'Enable HSTS with max-age set to at least 31536000 seconds.'
             },
             'X-Frame-Options': {
@@ -132,23 +161,22 @@ class PassiveScanner:
                 'title': 'Unencrypted HTTP Transport',
                 'category': 'Transport Security',
                 'severity': 'High',
-                'description': 'Target site operates over plain HTTP. Data in transit is vulnerable to eavesdropping.',
+                'description': 'Target site operates over plain HTTP. Data in transit is vulnerable to eavesdropping and MITM attacks.',
                 'recommendation': 'Migrate web traffic to HTTPS using TLS certificates.',
-                'details': 'URL scheme is http://'
+                'details': f'URL scheme is plain HTTP ({self.target_url})'
             })
-            ssl_audit_data['details'] = 'Site is not using HTTPS.'
+            ssl_audit_data['details'] = 'Site is operating over plain unencrypted HTTP.'
             self.ssl_info = ssl_audit_data
             return
 
-        # HTTPS Check SSL Socket
+        # HTTPS SSL Socket Validation
         try:
             context = ssl.create_default_context()
             with socket.create_connection((self.hostname, self.port), timeout=5) as sock:
                 with context.wrap_socket(sock, server_hostname=self.hostname) as ssock:
                     cert = ssock.getpeercert()
-                    
                     issuer_dict = dict(x[0] for x in cert.get('issuer', []))
-                    issuer = issuer_dict.get('organizationName') or issuer_dict.get('commonName', 'Unknown')
+                    issuer = issuer_dict.get('organizationName') or issuer_dict.get('commonName', 'Unknown Authority')
                     not_after = cert.get('notAfter')
 
                     ssl_audit_data['certificate_valid'] = True
@@ -157,13 +185,13 @@ class PassiveScanner:
                     ssl_audit_data['details'] = f'TLS Certificate issued by {issuer}, valid until {not_after}.'
         except Exception as e:
             ssl_audit_data['certificate_valid'] = False
-            ssl_audit_data['details'] = f'SSL Handshake Error: {str(e)}'
+            ssl_audit_data['details'] = f'SSL Handshake / Certificate Error: {str(e)}'
             self.findings.append({
                 'title': 'Invalid or Misconfigured SSL/TLS Certificate',
                 'category': 'Transport Security',
                 'severity': 'High',
                 'description': f'Failed to validate SSL/TLS certificate: {str(e)}',
-                'recommendation': 'Ensure target has a valid, non-expired TLS certificate from a trusted CA.',
+                'recommendation': 'Ensure target has a valid, non-expired TLS certificate from a trusted Certificate Authority.',
                 'details': str(e)
             })
 
@@ -184,7 +212,7 @@ class PassiveScanner:
                     'title': f'Cookie Missing HttpOnly Flag: {cookie_name}',
                     'category': 'Cookie Security',
                     'severity': 'Medium',
-                    'description': f'Cookie `{cookie_name}` is accessible via client-side JavaScript, exposing it to potential theft via XSS.',
+                    'description': f'Cookie `{cookie_name}` is accessible via client-side JavaScript, exposing it to theft via Cross-Site Scripting (XSS).',
                     'recommendation': 'Set the HttpOnly flag on sensitive cookies.',
                     'details': f'Cookie Name: {cookie_name}'
                 })
@@ -214,7 +242,7 @@ class PassiveScanner:
             method = form.get('method', 'get').lower()
             inputs = form.find_all('input')
             
-            # Check for hidden anti-CSRF token input
+            # Check for anti-CSRF token input
             csrf_token_found = False
             for inp in inputs:
                 name_attr = inp.get('name', '').lower()
@@ -228,12 +256,12 @@ class PassiveScanner:
                     'title': f'Form #{idx} Missing Anti-CSRF Token Indicator',
                     'category': 'Form Security',
                     'severity': 'Medium',
-                    'description': f'Form #{idx} uses POST method but lacks a recognized hidden anti-CSRF token parameter.',
+                    'description': f'Form #{idx} uses POST method but lacks a recognized anti-CSRF token parameter.',
                     'recommendation': 'Implement anti-CSRF tokens for all state-changing HTML forms.',
                     'details': f'Form Action: {action or "(self)"}, Method: POST'
                 })
 
-            # Form Action over Plain HTTP
+            # Insecure Form Action URL
             full_action_url = urljoin(self.target_url, action)
             if full_action_url.startswith('http://') and self.parsed_url.scheme == 'https':
                 self.findings.append({
@@ -248,7 +276,7 @@ class PassiveScanner:
     def _audit_robots_txt(self):
         robots_url = urljoin(self.target_url, '/robots.txt')
         try:
-            res = requests.get(robots_url, timeout=5)
+            res = requests.get(robots_url, timeout=5, verify=False)
             if res.status_code == 200:
                 lines = res.text.splitlines()
                 disallowed_paths = [line.split(':')[1].strip() for line in lines if line.lower().startswith('disallow:')]
@@ -263,14 +291,16 @@ class PassiveScanner:
                             'category': 'Information Disclosure',
                             'severity': 'Low',
                             'description': f'Robots.txt discloses sensitive pathways: {", ".join(found_exposed[:5])}',
-                            'recommendation': 'Avoid relying on robots.txt to restrict access to sensitive routes. Use authentication/authorization.',
+                            'recommendation': 'Avoid relying on robots.txt to restrict access to sensitive routes. Use proper authentication.',
                             'details': f'Disallowed routes identified: {", ".join(disallowed_paths[:10])}'
                         })
         except Exception:
-            pass # Non-critical check
+            pass
 
     def _calculate_score(self):
-        # Initial score 100
+        if self.connection_failed:
+            return 0, "Unreachable"
+
         score = 100
         for f in self.findings:
             sev = f['severity']
@@ -301,7 +331,7 @@ class PassiveScanner:
 
         return {
             'target_url': self.target_url,
-            'domain': self.hostname,
+            'domain': self.hostname or self.target_url,
             'scan_duration': duration,
             'risk_score': score,
             'risk_grade': grade,
