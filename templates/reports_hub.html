@@ -13,8 +13,8 @@
     <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center fw-bold" href="{{ url_for('index') }}">
-                <i class="bi bi-shield-lock-fill text-success me-2 fs-3"></i> 
-                <span>Secure<span class="text-success">Scan</span></span>
+                <i class="bi bi-shield-lock-fill text-info me-2 fs-3"></i> 
+                <span>Secure<span class="text-info">Scan</span></span>
             </a>
             <div class="navbar-nav ms-auto">
                 <a class="nav-link" href="{{ url_for('index') }}"><i class="bi bi-search me-1"></i> New Audit</a>
@@ -27,28 +27,28 @@
     <div class="container py-5">
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
             <div>
-                <h2 class="fw-bold text-white mb-1"><i class="bi bi-file-earmark-pdf text-success me-2"></i> Reports Download Portal</h2>
+                <h2 class="fw-bold text-dark mb-1"><i class="bi bi-file-earmark-pdf text-primary me-2"></i> Reports Download Portal</h2>
                 <p class="text-high-contrast-muted mb-0">Access, search, and download executive PDF reports and CSV audit exports by Domain, Host Name, or IP Address.</p>
             </div>
             <div>
-                <a href="{{ url_for('export_csv') }}" class="btn btn-outline-success px-4 py-2 fw-bold">
+                <a href="{{ url_for('export_csv') }}" class="btn btn-outline-primary px-4 py-2 fw-bold">
                     <i class="bi bi-filetype-csv me-2"></i> Export All Audits (CSV)
                 </a>
             </div>
         </div>
 
         <!-- Search & Filter Controls -->
-        <div class="card glass-card p-4 mb-4">
+        <div class="card glass-card p-4 mb-4 shadow-sm">
             <form action="{{ url_for('reports_hub') }}" method="GET" class="row g-3">
                 <div class="col-md-7">
-                    <label class="form-label text-white small uppercase fw-bold">Search Domain, Host Name, or IP</label>
+                    <label class="form-label text-dark small uppercase fw-bold">Search Domain, Host Name, or IP</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="bi bi-search"></i></span>
                         <input type="text" name="q" class="form-control form-control-custom" placeholder="e.g. example.com or 142.250.190.46" value="{{ search_q }}">
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label text-white small uppercase fw-bold">Filter by Posture</label>
+                    <label class="form-label text-dark small uppercase fw-bold">Filter by Posture</label>
                     <select name="grade" class="form-select form-control-custom">
                         <option value="">All Postures</option>
                         <option value="Excellent" {{ 'selected' if current_grade == 'Excellent' }}>Excellent (90-100)</option>
@@ -66,27 +66,27 @@
 
         <!-- Reports List Grid -->
         {% if not scans %}
-            <div class="alert alert-info fw-bold text-center py-4">
+            <div class="alert alert-info fw-bold text-center py-4 shadow-sm">
                 <i class="bi bi-info-circle fs-4 d-block mb-2"></i> No audit reports found matching your criteria.
             </div>
         {% else %}
             <div class="row g-4">
                 {% for s in scans %}
                 <div class="col-md-6 col-lg-4">
-                    <div class="card glass-card h-100 p-4 d-flex flex-column justify-content-between position-relative">
+                    <div class="card glass-card h-100 p-4 d-flex flex-column justify-content-between position-relative shadow-sm">
                         <div>
                             <div class="d-flex justify-content-between align-items-start mb-3">
                                 <div>
                                     <span class="badge {{ 'bg-success text-white' if s.risk_score >= 80 else ('bg-warning text-dark' if s.risk_score >= 60 else 'bg-danger text-white') }} fs-6 mb-2">
                                         Score: {{ s.risk_score }}/100 ({{ s.risk_grade }})
                                     </span>
-                                    <h5 class="fw-bold text-white mb-0 text-truncate" style="max-width: 200px;" title="{{ s.target_url }}">{{ s.target_name or s.domain }}</h5>
-                                    <small class="text-warning fw-mono d-block mt-1">IP: {{ s.target_ip or 'N/A' }}</small>
+                                    <h5 class="fw-bold text-dark mb-0 text-truncate" style="max-width: 200px;" title="{{ s.target_url }}">{{ s.target_name or s.domain }}</h5>
+                                    <small class="text-primary fw-mono d-block mt-1">IP: {{ s.target_ip or 'N/A' }}</small>
                                 </div>
-                                <i class="bi bi-file-earmark-pdf fs-1 text-success"></i>
+                                <i class="bi bi-file-earmark-pdf fs-1 text-primary"></i>
                             </div>
 
-                            <p class="text-white-50 small mb-2"><i class="bi bi-calendar3 me-1"></i> {{ s.scan_date.strftime('%b %d, %Y - %H:%M UTC') }}</p>
+                            <p class="text-secondary small mb-2"><i class="bi bi-calendar3 me-1"></i> {{ s.scan_date.strftime('%b %d, %Y - %H:%M UTC') }}</p>
                             
                             <div class="d-flex gap-2 my-3">
                                 <span class="badge badge-high">High: {{ s.high_count }}</span>
@@ -95,8 +95,8 @@
                             </div>
                         </div>
 
-                        <div class="pt-3 border-top border-secondary d-flex justify-content-between align-items-center">
-                            <a href="{{ url_for('report_view', scan_id=s.id) }}" class="btn btn-sm btn-outline-light">
+                        <div class="pt-3 border-top border-secondary-subtle d-flex justify-content-between align-items-center">
+                            <a href="{{ url_for('report_view', scan_id=s.id) }}" class="btn btn-sm btn-outline-dark">
                                 <i class="bi bi-eye me-1"></i> Web View
                             </a>
                             <a href="{{ url_for('download_pdf', scan_id=s.id) }}" class="btn btn-sm btn-gradient">

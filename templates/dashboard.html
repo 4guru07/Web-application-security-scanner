@@ -14,8 +14,8 @@
     <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center fw-bold" href="{{ url_for('index') }}">
-                <i class="bi bi-shield-lock-fill text-success me-2 fs-3"></i> 
-                <span>Secure<span class="text-success">Scan</span></span>
+                <i class="bi bi-shield-lock-fill text-info me-2 fs-3"></i> 
+                <span>Secure<span class="text-info">Scan</span></span>
             </a>
             <div class="navbar-nav ms-auto">
                 <a class="nav-link" href="{{ url_for('index') }}"><i class="bi bi-search me-1"></i> New Audit</a>
@@ -26,31 +26,31 @@
     </nav>
 
     <div class="container py-5">
-        <h2 class="fw-bold text-white mb-4"><i class="bi bi-speedometer2 text-success me-2"></i> Security Analytics Dashboard</h2>
+        <h2 class="fw-bold text-dark mb-4"><i class="bi bi-speedometer2 text-primary me-2"></i> Security Analytics Dashboard</h2>
 
         <!-- Stats Metric Row -->
         <div class="row g-4 mb-4">
             <div class="col-md-3">
-                <div class="card glass-card p-3 text-center">
-                    <h6 class="text-white-50 small text-uppercase fw-bold">Total Audits</h6>
-                    <h2 class="display-5 fw-extrabold text-success my-1">{{ stats.total_scans }}</h2>
+                <div class="card glass-card p-3 text-center shadow-sm">
+                    <h6 class="text-muted small text-uppercase fw-bold">Total Audits</h6>
+                    <h2 class="display-5 fw-extrabold text-primary my-1">{{ stats.total_scans }}</h2>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card glass-card p-3 text-center">
-                    <h6 class="text-white-50 small text-uppercase fw-bold">Avg Risk Score</h6>
-                    <h2 class="display-5 fw-extrabold text-info my-1">{{ stats.avg_score }}</h2>
+                <div class="card glass-card p-3 text-center shadow-sm">
+                    <h6 class="text-muted small text-uppercase fw-bold">Avg Risk Score</h6>
+                    <h2 class="display-5 fw-extrabold text-success my-1">{{ stats.avg_score }}</h2>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card glass-card p-3 text-center">
-                    <h6 class="text-white-50 small text-uppercase fw-bold">Total High Issues</h6>
+                <div class="card glass-card p-3 text-center shadow-sm">
+                    <h6 class="text-muted small text-uppercase fw-bold">Total High Issues</h6>
                     <h2 class="display-5 fw-extrabold text-danger my-1">{{ stats.total_high }}</h2>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card glass-card p-3 text-center">
-                    <h6 class="text-white-50 small text-uppercase fw-bold">Total Medium / Low</h6>
+                <div class="card glass-card p-3 text-center shadow-sm">
+                    <h6 class="text-muted small text-uppercase fw-bold">Total Medium / Low</h6>
                     <h2 class="display-5 fw-extrabold text-warning my-1">{{ stats.total_med + stats.total_low }}</h2>
                 </div>
             </div>
@@ -58,14 +58,14 @@
 
         <div class="row g-4 mb-4">
             <div class="col-lg-6">
-                <div class="card glass-card p-4">
-                    <h5 class="fw-bold text-white mb-3"><i class="bi bi-pie-chart text-success me-2"></i> Severity Distribution Chart</h5>
+                <div class="card glass-card p-4 shadow-sm">
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-pie-chart text-primary me-2"></i> Severity Distribution Chart</h5>
                     <canvas id="severityChart" height="200"></canvas>
                 </div>
             </div>
             <div class="col-lg-6">
-                <div class="card glass-card p-4 d-flex flex-column justify-content-center">
-                    <h5 class="fw-bold text-white mb-3"><i class="bi bi-shield-check text-success me-2"></i> Audit Guidelines</h5>
+                <div class="card glass-card p-4 d-flex flex-column justify-content-center shadow-sm">
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-shield-check text-primary me-2"></i> Audit Guidelines</h5>
                     <p class="text-body">SecureScan provides an automated, non-intrusive evaluation of HTTP Security Headers, DNS IP resolution, SSL/TLS certificate health, cookie protection attributes, and form configuration safety.</p>
                     <ul class="text-body small ps-3">
                         <li class="mb-1"><strong class="text-danger">High Severity:</strong> Unencrypted HTTP transport, missing HSTS, CSP, or SSL handshake failures.</li>
@@ -77,10 +77,10 @@
         </div>
 
         <!-- Scan History Table -->
-        <div class="card glass-card p-4">
-            <h5 class="fw-bold text-white mb-3"><i class="bi bi-table text-success me-2"></i> Audit Records</h5>
+        <div class="card glass-card p-4 shadow-sm">
+            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-table text-primary me-2"></i> Audit Records</h5>
             <div class="table-responsive">
-                <table class="table table-dark table-custom table-hover align-middle">
+                <table class="table table-custom table-hover align-middle">
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -98,11 +98,11 @@
                     <tbody>
                         {% for s in scans %}
                         <tr>
-                            <td class="text-success fw-bold">#{{ s.id }}</td>
-                            <td class="fw-bold text-white">{{ s.target_name or s.domain }}</td>
-                            <td><code class="text-warning">{{ s.target_ip or 'N/A' }}</code></td>
-                            <td class="text-white-50 small text-truncate" style="max-width: 180px;" title="{{ s.target_url }}">{{ s.target_url }}</td>
-                            <td class="text-white-50 small">{{ s.scan_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td class="text-primary fw-bold">#{{ s.id }}</td>
+                            <td class="fw-bold text-dark">{{ s.target_name or s.domain }}</td>
+                            <td><code class="text-primary">{{ s.target_ip or 'N/A' }}</code></td>
+                            <td class="text-secondary small text-truncate" style="max-width: 180px;" title="{{ s.target_url }}">{{ s.target_url }}</td>
+                            <td class="text-secondary small">{{ s.scan_date.strftime('%Y-%m-%d %H:%M') }}</td>
                             <td>
                                 <span class="badge {{ 'bg-success text-white' if s.risk_score >= 80 else ('bg-warning text-dark' if s.risk_score >= 60 else 'bg-danger text-white') }} fs-6">
                                     {{ s.risk_score }} / 100
@@ -113,8 +113,8 @@
                             <td><span class="badge badge-low">{{ s.low_count }}</span></td>
                             <td>
                                 <div class="btn-group btn-group-sm">
-                                    <a href="{{ url_for('report_view', scan_id=s.id) }}" class="btn btn-outline-success fw-bold"><i class="bi bi-eye"></i> View</a>
-                                    <a href="{{ url_for('download_pdf', scan_id=s.id) }}" class="btn btn-outline-info fw-bold"><i class="bi bi-download"></i> PDF</a>
+                                    <a href="{{ url_for('report_view', scan_id=s.id) }}" class="btn btn-outline-primary fw-bold"><i class="bi bi-eye"></i> View</a>
+                                    <a href="{{ url_for('download_pdf', scan_id=s.id) }}" class="btn btn-outline-success fw-bold"><i class="bi bi-download"></i> PDF</a>
                                     <form action="{{ url_for('delete_scan', scan_id=s.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this scan record?');">
                                         <button type="submit" class="btn btn-outline-danger fw-bold"><i class="bi bi-trash"></i></button>
                                     </form>
@@ -137,7 +137,7 @@
                 labels: ['High Severity', 'Medium Severity', 'Low Severity'],
                 datasets: [{
                     data: [{{ stats.total_high }}, {{ stats.total_med }}, {{ stats.total_low }}],
-                    backgroundColor: ['#ef4444', '#f59e0b', '#10b981'],
+                    backgroundColor: ['#dc2626', '#d97706', '#059669'],
                     borderWidth: 0
                 }]
             },
@@ -145,7 +145,7 @@
                 responsive: true,
                 plugins: {
                     legend: {
-                        labels: { color: '#ffffff', font: { size: 14, weight: 'bold' } }
+                        labels: { color: '#0f172a', font: { size: 14, weight: 'bold' } }
                     }
                 }
             }

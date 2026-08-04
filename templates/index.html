@@ -13,8 +13,8 @@
     <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center fw-bold" href="{{ url_for('index') }}">
-                <i class="bi bi-shield-lock-fill text-success me-2 fs-3"></i> 
-                <span>Secure<span class="text-success">Scan</span></span>
+                <i class="bi bi-shield-lock-fill text-info me-2 fs-3"></i> 
+                <span>Secure<span class="text-info">Scan</span></span>
             </a>
             <div class="navbar-nav ms-auto">
                 <a class="nav-link active" href="{{ url_for('index') }}"><i class="bi bi-search me-1"></i> New Audit</a>
@@ -28,7 +28,7 @@
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ 'danger' if category == 'error' else 'info' }} alert-dismissible fade show fw-bold" role="alert">
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'info' }} alert-dismissible fade show fw-bold shadow-sm" role="alert">
                         {{ message }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
@@ -38,39 +38,105 @@
 
         <div class="row justify-content-center text-center my-4">
             <div class="col-lg-9">
-                <h1 class="display-4 fw-extrabold text-white mb-3">
+                <h1 class="display-4 fw-extrabold text-dark mb-3">
                     Web Security & <span class="gradient-heading">Configuration Auditor</span>
                 </h1>
                 <p class="text-high-contrast-muted mb-4">
-                    Perform automated, non-intrusive security posture assessments by entering a website URL, Domain Name, or IPv4 Address.
+                    Perform automated, non-intrusive security posture assessments across Target URLs, Domain Names, or IPv4 Addresses.
                 </p>
             </div>
         </div>
 
         <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="card hero-card">
-                    <form action="{{ url_for('start_scan') }}" method="POST" id="scanForm">
-                        <div class="mb-3">
-                            <label for="url" class="form-label mb-2">Target Address (URL, Domain, or IPv4)</label>
-                            <div class="input-group input-group-lg">
-                                <span class="input-group-text"><i class="bi bi-globe2"></i></span>
-                                <input type="text" class="form-control form-control-custom" id="url" name="url" placeholder="https://example.com, example.com, or 142.250.190.46" required autocomplete="off">
-                                <button type="submit" class="btn btn-gradient px-4 fs-6" id="btnScan">
-                                    <i class="bi bi-shield-check me-2"></i> Start Audit
-                                </button>
-                            </div>
-                            <div class="form-text-custom mt-3">
-                                <i class="bi bi-info-circle text-success me-1"></i> SecureScan automatically resolves DNS IP addresses, evaluates HTTP Security Headers, SSL/TLS certificates, Cookie security, and Robots.txt posture safely.
-                            </div>
+            <div class="col-lg-9">
+                <div class="card hero-card shadow-sm">
+                    
+                    <!-- Separate Search Tabs for URL, Domain, and IP -->
+                    <ul class="nav nav-tabs nav-tabs-custom mb-4" id="targetTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="url-tab" data-bs-toggle="tab" data-bs-target="#url-pane" type="button" role="tab">
+                                <i class="bi bi-link-45deg me-1"></i> Website URL
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="domain-tab" data-bs-toggle="tab" data-bs-target="#domain-pane" type="button" role="tab">
+                                <i class="bi bi-globe me-1"></i> Domain Name
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="ip-tab" data-bs-toggle="tab" data-bs-target="#ip-pane" type="button" role="tab">
+                                <i class="bi bi-hdd-network me-1"></i> IPv4 Address
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="targetTabContent">
+                        
+                        <!-- TAB 1: Website URL -->
+                        <div class="tab-pane fade show active" id="url-pane" role="tabpanel">
+                            <form action="{{ url_for('start_scan') }}" method="POST" class="scan-form">
+                                <div class="mb-3">
+                                    <label class="form-label mb-2">Target Website URL</label>
+                                    <div class="input-group input-group-lg">
+                                        <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
+                                        <input type="url" class="form-control form-control-custom" name="url" placeholder="https://example.com/login" required autocomplete="off">
+                                        <button type="submit" class="btn btn-gradient px-4 fs-6 submit-btn">
+                                            <i class="bi bi-shield-check me-2"></i> Audit URL
+                                        </button>
+                                    </div>
+                                    <div class="form-text-custom mt-3">
+                                        <i class="bi bi-info-circle text-primary me-1"></i> Evaluates target HTTPS/HTTP schemes, security headers, SSL certificate chain, and cookie protection attributes.
+                                    </div>
+                                </div>
+                            </form>
                         </div>
-                    </form>
+
+                        <!-- TAB 2: Domain Name -->
+                        <div class="tab-pane fade" id="domain-pane" role="tabpanel">
+                            <form action="{{ url_for('start_scan') }}" method="POST" class="scan-form">
+                                <div class="mb-3">
+                                    <label class="form-label mb-2">Target Domain Name</label>
+                                    <div class="input-group input-group-lg">
+                                        <span class="input-group-text"><i class="bi bi-globe"></i></span>
+                                        <input type="text" class="form-control form-control-custom" name="url" placeholder="example.com or vulnweb.com" required autocomplete="off">
+                                        <button type="submit" class="btn btn-gradient px-4 fs-6 submit-btn">
+                                            <i class="bi bi-shield-check me-2"></i> Audit Domain
+                                        </button>
+                                    </div>
+                                    <div class="form-text-custom mt-3">
+                                        <i class="bi bi-info-circle text-primary me-1"></i> Automatically resolves host DNS records, checks domain security posture, SSL/TLS, and Robots.txt disclosure.
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- TAB 3: IPv4 Address -->
+                        <div class="tab-pane fade" id="ip-pane" role="tabpanel">
+                            <form action="{{ url_for('start_scan') }}" method="POST" class="scan-form">
+                                <div class="mb-3">
+                                    <label class="form-label mb-2">Target IPv4 Address</label>
+                                    <div class="input-group input-group-lg">
+                                        <span class="input-group-text"><i class="bi bi-hdd-network"></i></span>
+                                        <input type="text" class="form-control form-control-custom" name="url" placeholder="e.g. 142.250.190.46 or 1.1.1.1" pattern="^([0-9]{1,3}\.){3}[0-9]{1,3}$" required autocomplete="off">
+                                        <button type="submit" class="btn btn-gradient px-4 fs-6 submit-btn">
+                                            <i class="bi bi-shield-check me-2"></i> Audit IP Address
+                                        </button>
+                                    </div>
+                                    <div class="form-text-custom mt-3">
+                                        <i class="bi bi-info-circle text-primary me-1"></i> Performs safe reverse DNS host resolution, checks server HTTP security headers, and transport encryption.
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                    </div>
 
                     <div class="d-none text-center py-4 mt-3 loading-box" id="scanProgress">
-                        <div class="spinner-border text-success mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
-                        <h4 class="fw-bold text-white mb-2">Running Security Assessment...</h4>
-                        <p class="text-high-contrast-muted mb-0">Resolving target IP address and auditing security posture headers.</p>
+                        <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+                        <h4 class="fw-bold text-dark mb-2">Running Security Assessment...</h4>
+                        <p class="text-high-contrast-muted mb-0">Auditing target security posture headers and transport security.</p>
                     </div>
+
                 </div>
             </div>
         </div>
@@ -78,10 +144,10 @@
         {% if recent_scans %}
         <div class="row justify-content-center mt-5">
             <div class="col-lg-11">
-                <h4 class="fw-bold text-white mb-3"><i class="bi bi-clock-history me-2 text-success"></i> Recent Scans</h4>
-                <div class="card glass-card p-3">
+                <h4 class="fw-bold text-dark mb-3"><i class="bi bi-clock-history me-2 text-primary"></i> Recent Scans</h4>
+                <div class="card glass-card p-3 shadow-sm">
                     <div class="table-responsive">
-                        <table class="table table-dark table-custom table-hover align-middle mb-0">
+                        <table class="table table-custom table-hover align-middle mb-0">
                             <thead>
                                 <tr>
                                     <th>Target Host Name</th>
@@ -95,17 +161,17 @@
                             <tbody>
                                 {% for s in recent_scans %}
                                 <tr>
-                                    <td class="fw-bold text-white"><i class="bi bi-hdd-network text-success me-1"></i> {{ s.target_name or s.domain }}</td>
-                                    <td><code class="text-warning">{{ s.target_ip or 'N/A' }}</code></td>
-                                    <td class="text-white-50 small text-truncate" style="max-width: 220px;" title="{{ s.target_url }}">{{ s.target_url }}</td>
-                                    <td class="text-white-50 small">{{ s.scan_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td class="fw-bold text-dark"><i class="bi bi-hdd-network text-primary me-1"></i> {{ s.target_name or s.domain }}</td>
+                                    <td><code class="text-primary">{{ s.target_ip or 'N/A' }}</code></td>
+                                    <td class="text-secondary small text-truncate" style="max-width: 220px;" title="{{ s.target_url }}">{{ s.target_url }}</td>
+                                    <td class="text-secondary small">{{ s.scan_date.strftime('%Y-%m-%d %H:%M') }}</td>
                                     <td>
                                         <span class="badge {{ 'bg-success text-white' if s.risk_score >= 80 else ('bg-warning text-dark' if s.risk_score >= 60 else 'bg-danger text-white') }} fs-6">
                                             {{ s.risk_score }} / 100
                                         </span>
                                     </td>
                                     <td>
-                                        <a href="{{ url_for('report_view', scan_id=s.id) }}" class="btn btn-sm btn-outline-success fw-bold px-3">View Report</a>
+                                        <a href="{{ url_for('report_view', scan_id=s.id) }}" class="btn btn-sm btn-outline-primary fw-bold px-3">View Report</a>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -120,9 +186,21 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.getElementById('scanForm').addEventListener('submit', function() {
-            document.getElementById('btnScan').disabled = true;
-            document.getElementById('scanProgress').classList.remove('d-none');
+        // Handle form submission loading state
+        document.querySelectorAll('.scan-form').forEach(form => {
+            form.addEventListener('submit', function() {
+                document.querySelectorAll('.submit-btn').forEach(btn => btn.disabled = true);
+                document.getElementById('scanProgress').classList.remove('d-none');
+            });
+        });
+
+        // BFCache / Browser Back Button Reset Handler
+        window.addEventListener('pageshow', function(event) {
+            document.querySelectorAll('.submit-btn').forEach(btn => btn.disabled = false);
+            const progress = document.getElementById('scanProgress');
+            if (progress) {
+                progress.classList.add('d-none');
+            }
         });
     </script>
 </body>

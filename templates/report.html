@@ -13,8 +13,8 @@
     <nav class="navbar navbar-expand-lg navbar-dark navbar-custom sticky-top">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center fw-bold" href="{{ url_for('index') }}">
-                <i class="bi bi-shield-lock-fill text-success me-2 fs-3"></i> 
-                <span>Secure<span class="text-success">Scan</span></span>
+                <i class="bi bi-shield-lock-fill text-info me-2 fs-3"></i> 
+                <span>Secure<span class="text-info">Scan</span></span>
             </a>
             <div class="navbar-nav ms-auto">
                 <a class="nav-link" href="{{ url_for('index') }}"><i class="bi bi-search me-1"></i> New Audit</a>
@@ -27,22 +27,22 @@
     <div class="container py-5">
         
         <!-- Header & Primary Report Action Section -->
-        <div class="card glass-card p-4 mb-4 border-success">
+        <div class="card glass-card p-4 mb-4 shadow-sm border-primary">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <div>
-                    <span class="badge bg-dark text-success border border-success mb-2 px-3 py-1 fw-bold">Executive Audit Report</span>
-                    <h2 class="fw-bold text-white mb-1"><i class="bi bi-shield-check text-success me-2"></i> Security Assessment: {{ scan.target_name or scan.domain }}</h2>
+                    <span class="badge bg-primary text-white mb-2 px-3 py-1 fw-bold">Executive Audit Report</span>
+                    <h2 class="fw-bold text-dark mb-1"><i class="bi bi-shield-check text-primary me-2"></i> Security Assessment: {{ scan.target_name or scan.domain }}</h2>
                     <p class="text-high-contrast-muted mb-0">
-                        Target Host: <span class="text-success fw-bold me-3">{{ scan.target_name or scan.domain }}</span>
-                        Target IP: <code class="text-warning me-3">{{ scan.target_ip or 'N/A' }}</code>
-                        Target URL: <span class="text-info fw-bold">{{ scan.target_url }}</span>
+                        Target Host: <span class="text-primary fw-bold me-3">{{ scan.target_name or scan.domain }}</span>
+                        Target IP: <code class="text-primary me-3">{{ scan.target_ip or 'N/A' }}</code>
+                        Target URL: <span class="text-secondary fw-bold">{{ scan.target_url }}</span>
                     </p>
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
-                    <button onclick="window.print()" class="btn btn-outline-light px-3 py-2 fw-bold">
+                    <button onclick="window.print()" class="btn btn-outline-dark px-3 py-2 fw-bold">
                         <i class="bi bi-printer me-2"></i> Print View
                     </button>
-                    <a href="{{ url_for('export_csv') }}" class="btn btn-outline-success px-3 py-2 fw-bold">
+                    <a href="{{ url_for('export_csv') }}" class="btn btn-outline-primary px-3 py-2 fw-bold">
                         <i class="bi bi-filetype-csv me-2"></i> Export CSV
                     </a>
                     <a href="{{ url_for('download_pdf', scan_id=scan.id) }}" class="btn btn-gradient px-4 py-2 fs-6 fw-bold">
@@ -55,11 +55,11 @@
         <!-- Metrics Overview -->
         <div class="row g-4 mb-4">
             <div class="col-md-3">
-                <div class="card glass-card p-3 text-center">
-                    <h6 class="text-white-50 small text-uppercase fw-bold">Risk Posture Score</h6>
+                <div class="card glass-card p-3 text-center shadow-sm">
+                    <h6 class="text-muted small text-uppercase fw-bold">Risk Posture Score</h6>
                     <div class="score-circle my-3">
                         <span class="score-number">{{ scan.risk_score }}</span>
-                        <span class="small text-white-50">/ 100</span>
+                        <span class="small text-muted">/ 100</span>
                     </div>
                     <div>
                         <span class="badge {{ 'bg-success text-white' if scan.risk_score >= 80 else ('bg-warning text-dark' if scan.risk_score >= 60 else 'bg-danger text-white') }} fs-6 px-3 py-2">
@@ -69,27 +69,27 @@
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card glass-card p-3 text-center h-100 justify-content-center">
-                    <h6 class="text-white-50 small text-uppercase fw-bold">Total Vulnerabilities</h6>
-                    <h2 class="display-4 fw-extrabold text-white my-2">{{ scan.total_vulnerabilities }}</h2>
-                    <span class="text-success fw-semibold small">Scan Duration: {{ scan.scan_duration }}s</span>
+                <div class="card glass-card p-3 text-center h-100 justify-content-center shadow-sm">
+                    <h6 class="text-muted small text-uppercase fw-bold">Total Vulnerabilities</h6>
+                    <h2 class="display-4 fw-extrabold text-dark my-2">{{ scan.total_vulnerabilities }}</h2>
+                    <span class="text-primary fw-semibold small">Scan Duration: {{ scan.scan_duration }}s</span>
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="card glass-card p-4 h-100">
-                    <h6 class="text-white-50 small text-uppercase fw-bold mb-4">Severity Distribution Breakdown</h6>
+                <div class="card glass-card p-4 h-100 shadow-sm">
+                    <h6 class="text-muted small text-uppercase fw-bold mb-4">Severity Distribution Breakdown</h6>
                     <div class="d-flex justify-content-around text-center my-auto">
                         <div>
                             <span class="badge badge-high fs-4 mb-2">{{ scan.high_count }}</span>
-                            <div class="small fw-bold text-white mt-1">High Severity</div>
+                            <div class="small fw-bold text-dark mt-1">High Severity</div>
                         </div>
                         <div>
                             <span class="badge badge-med fs-4 mb-2">{{ scan.medium_count }}</span>
-                            <div class="small fw-bold text-white mt-1">Medium Severity</div>
+                            <div class="small fw-bold text-dark mt-1">Medium Severity</div>
                         </div>
                         <div>
                             <span class="badge badge-low fs-4 mb-2">{{ scan.low_count }}</span>
-                            <div class="small fw-bold text-white mt-1">Low Severity</div>
+                            <div class="small fw-bold text-dark mt-1">Low Severity</div>
                         </div>
                     </div>
                 </div>
@@ -97,50 +97,50 @@
         </div>
 
         <!-- Security Compliance Benchmark -->
-        <div class="card glass-card p-4 mb-4">
-            <h5 class="fw-bold text-white mb-3"><i class="bi bi-award text-success me-2"></i> Security Compliance Benchmark</h5>
+        <div class="card glass-card p-4 mb-4 shadow-sm">
+            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-award text-primary me-2"></i> Security Compliance Benchmark</h5>
             <div class="row g-3">
                 <div class="col-md-4">
-                    <div class="p-3 bg-dark border border-secondary rounded">
+                    <div class="p-3 bg-light border border-secondary-subtle rounded">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="fw-bold text-white">OWASP A05:2021</span>
+                            <span class="fw-bold text-dark">OWASP A05:2021</span>
                             <span class="badge {{ 'bg-success' if scan.high_count == 0 else 'bg-warning text-dark' }}">
                                 {{ 'Compliant' if scan.high_count == 0 else 'Misconfigured' }}
                             </span>
                         </div>
-                        <small class="text-white-50">Evaluates Security Misconfiguration standards & header protections.</small>
+                        <small class="text-muted">Evaluates Security Misconfiguration standards & header protections.</small>
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="p-3 bg-dark border border-secondary rounded">
+                    <div class="p-3 bg-light border border-secondary-subtle rounded">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="fw-bold text-white">NIST 800-52 Guidelines</span>
+                            <span class="fw-bold text-dark">NIST 800-52 Guidelines</span>
                             <span class="badge {{ 'bg-success' if scan.ssl_audit and scan.ssl_audit.certificate_valid else 'bg-danger' }}">
                                 {{ 'Passed' if scan.ssl_audit and scan.ssl_audit.certificate_valid else 'Failed' }}
                             </span>
                         </div>
-                        <small class="text-white-50">Validates TLS transport encryption & CA certificate chain integrity.</small>
+                        <small class="text-muted">Validates TLS transport encryption & CA certificate chain integrity.</small>
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="p-3 bg-dark border border-secondary rounded">
+                    <div class="p-3 bg-light border border-secondary-subtle rounded">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="fw-bold text-white">PCI-DSS 4.0 Standard</span>
+                            <span class="fw-bold text-dark">PCI-DSS 4.0 Standard</span>
                             <span class="badge {{ 'bg-success' if missing_count == 0 else 'bg-danger' }}">
                                 {{ 'Passed' if missing_count == 0 else missing_count ~ ' Headers Missing' }}
                             </span>
                         </div>
-                        <small class="text-white-50">Checks required HSTS, CSP, and X-Frame-Options headers.</small>
+                        <small class="text-muted">Checks required HSTS, CSP, and X-Frame-Options headers.</small>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Security Headers Matrix -->
-        <div class="card glass-card p-4 mb-4">
-            <h5 class="fw-bold text-white mb-3"><i class="bi bi-shield-check text-success me-2"></i> HTTP Security Headers Audit</h5>
+        <div class="card glass-card p-4 mb-4 shadow-sm">
+            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-shield-check text-primary me-2"></i> HTTP Security Headers Audit</h5>
             <div class="table-responsive">
-                <table class="table table-dark table-custom align-middle mb-0">
+                <table class="table table-custom align-middle mb-0">
                     <thead>
                         <tr>
                             <th scope="col" style="width: 25%;">HEADER NAME</th>
@@ -152,7 +152,7 @@
                     <tbody>
                         {% for ha in scan.header_audits %}
                         <tr>
-                            <td class="fw-bold text-white fs-6">{{ ha.header_name }}</td>
+                            <td class="fw-bold text-dark fs-6">{{ ha.header_name }}</td>
                             <td>
                                 {% if ha.status == 'Present' %}
                                     <span class="badge bg-success text-white px-3 py-2"><i class="bi bi-check-circle me-1"></i> Present</span>
@@ -161,7 +161,7 @@
                                 {% endif %}
                             </td>
                             <td><code>{{ ha.header_value or 'N/A' }}</code></td>
-                            <td class="text-light fw-medium">{{ ha.recommendation }}</td>
+                            <td class="text-secondary fw-medium">{{ ha.recommendation }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -171,35 +171,35 @@
 
         <!-- Server Remediation Patch Assistant -->
         {% if missing_count > 0 %}
-        <div class="card glass-card p-4 mb-4">
+        <div class="card glass-card p-4 mb-4 shadow-sm">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="fw-bold text-white mb-0"><i class="bi bi-code-square text-success me-2"></i> Server Remediation Patch Assistant</h5>
-                <span class="badge bg-success text-white">Auto-Generated Fixes</span>
+                <h5 class="fw-bold text-dark mb-0"><i class="bi bi-code-square text-primary me-2"></i> Server Remediation Patch Assistant</h5>
+                <span class="badge bg-primary text-white">Auto-Generated Fixes</span>
             </div>
             <p class="text-high-contrast-muted mb-3">Copy and paste these configuration directives into your web server configuration file to fix all {{ missing_count }} missing security headers instantly:</p>
             
-            <ul class="nav nav-tabs border-secondary mb-3" id="remediationTab" role="tablist">
+            <ul class="nav nav-tabs border-secondary-subtle mb-3" id="remediationTab" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active text-white fw-bold" id="nginx-tab" data-bs-toggle="tab" data-bs-target="#nginx" type="button" role="tab">Nginx Config</button>
+                    <button class="nav-link active text-dark fw-bold" id="nginx-tab" data-bs-toggle="tab" data-bs-target="#nginx" type="button" role="tab">Nginx Config</button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link text-white fw-bold" id="apache-tab" data-bs-toggle="tab" data-bs-target="#apache" type="button" role="tab">Apache (.htaccess)</button>
+                    <button class="nav-link text-dark fw-bold" id="apache-tab" data-bs-toggle="tab" data-bs-target="#apache" type="button" role="tab">Apache (.htaccess)</button>
                 </li>
             </ul>
             <div class="tab-content" id="remediationTabContent">
                 <div class="tab-pane fade show active" id="nginx" role="tabpanel">
-                    <pre class="bg-dark p-3 rounded border border-secondary text-warning font-monospace mb-0"><code>{{ snippets.nginx }}</code></pre>
+                    <pre class="bg-dark p-3 rounded border text-warning font-monospace mb-0"><code>{{ snippets.nginx }}</code></pre>
                 </div>
                 <div class="tab-pane fade" id="apache" role="tabpanel">
-                    <pre class="bg-dark p-3 rounded border border-secondary text-warning font-monospace mb-0"><code>{{ snippets.apache }}</code></pre>
+                    <pre class="bg-dark p-3 rounded border text-warning font-monospace mb-0"><code>{{ snippets.apache }}</code></pre>
                 </div>
             </div>
         </div>
         {% endif %}
 
         <!-- Findings List -->
-        <div class="card glass-card p-4">
-            <h5 class="fw-bold text-white mb-3"><i class="bi bi-exclamation-triangle text-warning me-2"></i> Detailed Audit Findings</h5>
+        <div class="card glass-card p-4 shadow-sm">
+            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-exclamation-triangle text-warning me-2"></i> Detailed Audit Findings</h5>
             {% if not scan.findings %}
                 <div class="alert alert-success fw-bold mb-0">
                     <i class="bi bi-shield-check me-2"></i> Excellent! No major security issues detected during passive analysis.
@@ -213,16 +213,16 @@
                                 <span class="badge {{ 'badge-high' if f.severity == 'High' else ('badge-med' if f.severity == 'Medium' else 'badge-low') }} me-3">
                                     {{ f.severity }}
                                 </span>
-                                <span class="fw-bold text-white me-3 fs-6">{{ f.title }}</span>
-                                <span class="text-success small fw-semibold">({{ f.category }})</span>
+                                <span class="fw-bold text-dark me-3 fs-6">{{ f.title }}</span>
+                                <span class="text-primary small fw-semibold">({{ f.category }})</span>
                             </button>
                         </h2>
                         <div id="collapse{{ f.id }}" class="accordion-collapse collapse" data-bs-parent="#findingsAccordion">
                             <div class="accordion-body accordion-body-custom rounded-bottom p-4">
-                                <p class="mb-2 text-white"><strong>Description:</strong> {{ f.description }}</p>
-                                <p class="mb-2 text-success"><strong>Recommendation:</strong> {{ f.recommendation }}</p>
+                                <p class="mb-2 text-dark"><strong>Description:</strong> {{ f.description }}</p>
+                                <p class="mb-2 text-primary"><strong>Recommendation:</strong> {{ f.recommendation }}</p>
                                 {% if f.details %}
-                                    <div class="p-3 bg-dark border border-secondary rounded font-monospace small mt-3 text-warning">
+                                    <div class="p-3 bg-light border rounded font-monospace small mt-3 text-dark">
                                         {{ f.details }}
                                     </div>
                                 {% endif %}
