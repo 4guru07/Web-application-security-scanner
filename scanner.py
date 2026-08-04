@@ -75,7 +75,7 @@ class PassiveScanner:
             self.hostname = self.parsed_url.hostname
             self.port = self.parsed_url.port or (443 if self.parsed_url.scheme == 'https' else 80)
 
-        # 2. HTTP Security Header Audit
+        # 2. HTTP Security Header Audit (Severity aligned with Pentest-Tools Industry Benchmark)
         self._audit_security_headers()
 
         # 3. SSL/TLS Audit
@@ -97,24 +97,25 @@ class PassiveScanner:
     def _audit_security_headers(self):
         headers = self.response.headers if self.response else {}
 
+        # Severity definitions aligned with Pentest-Tools & OWASP Light Scanner Standard
         security_headers_spec = {
             'Content-Security-Policy': {
-                'severity': 'High',
+                'severity': 'Medium',
                 'desc': 'Content-Security-Policy (CSP) header is missing. CSP helps prevent XSS and data injection attacks.',
                 'rec': 'Configure a strong CSP header restricting trusted content sources.'
             },
             'Strict-Transport-Security': {
-                'severity': 'High',
+                'severity': 'Medium',
                 'desc': 'HTTP Strict Transport Security (HSTS) header is missing. HSTS enforces encrypted HTTPS connections.',
                 'rec': 'Enable HSTS with max-age set to at least 31536000 seconds.'
             },
             'X-Frame-Options': {
-                'severity': 'Medium',
+                'severity': 'Low',
                 'desc': 'X-Frame-Options header is missing. Pages can be embedded in frames, exposing users to Clickjacking.',
                 'rec': 'Set X-Frame-Options to DENY or SAMEORIGIN.'
             },
             'X-Content-Type-Options': {
-                'severity': 'Medium',
+                'severity': 'Low',
                 'desc': 'X-Content-Type-Options header is missing. Browsers may MIME-sniff response types.',
                 'rec': 'Set X-Content-Type-Options to nosniff.'
             },
@@ -220,8 +221,8 @@ class PassiveScanner:
                 self.findings.append({
                     'title': f'Cookie Missing HttpOnly Flag: {cookie_name}',
                     'category': 'Cookie Security',
-                    'severity': 'Medium',
-                    'description': f'Cookie `{cookie_name}` is accessible via client-side JavaScript, exposing it to theft via Cross-Site Scripting (XSS).',
+                    'severity': 'Low',
+                    'description': f'Cookie `{cookie_name}` is accessible via client-side JavaScript, exposing it to potential theft via Cross-Site Scripting (XSS).',
                     'recommendation': 'Set the HttpOnly flag on sensitive cookies.',
                     'details': f'Cookie Name: {cookie_name}'
                 })
@@ -230,7 +231,7 @@ class PassiveScanner:
                 self.findings.append({
                     'title': f'Cookie Missing Secure Flag: {cookie_name}',
                     'category': 'Cookie Security',
-                    'severity': 'Medium',
+                    'severity': 'Low',
                     'description': f'Cookie `{cookie_name}` is transmitted over unencrypted HTTP requests.',
                     'recommendation': 'Set the Secure flag on all cookies when operating over HTTPS.',
                     'details': f'Cookie Name: {cookie_name}'
@@ -310,15 +311,16 @@ class PassiveScanner:
         if self.connection_failed:
             return 0, "Unreachable"
 
+        # Initial baseline 100
         score = 100
         for f in self.findings:
             sev = f['severity']
             if sev == 'High':
                 score -= 15
             elif sev == 'Medium':
-                score -= 8
+                score -= 5
             elif sev == 'Low':
-                score -= 3
+                score -= 2
 
         score = max(0, min(100, score))
 
