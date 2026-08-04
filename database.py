@@ -8,6 +8,8 @@ class Scan(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     target_url = db.Column(db.String(500), nullable=False)
+    target_name = db.Column(db.String(255), nullable=True, default='N/A')
+    target_ip = db.Column(db.String(100), nullable=True, default='N/A')
     domain = db.Column(db.String(255), nullable=False)
     scan_date = db.Column(db.DateTime, default=datetime.utcnow)
     scan_duration = db.Column(db.Float, default=0.0) # in seconds

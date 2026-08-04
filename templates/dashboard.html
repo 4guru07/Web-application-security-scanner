@@ -20,6 +20,7 @@
             <div class="navbar-nav ms-auto">
                 <a class="nav-link" href="{{ url_for('index') }}"><i class="bi bi-search me-1"></i> New Audit</a>
                 <a class="nav-link active" href="{{ url_for('dashboard') }}"><i class="bi bi-speedometer2 me-1"></i> Dashboard</a>
+                <a class="nav-link" href="{{ url_for('reports_hub') }}"><i class="bi bi-folder-symlink me-1"></i> Reports Hub</a>
             </div>
         </div>
     </nav>
@@ -65,7 +66,7 @@
             <div class="col-lg-6">
                 <div class="card glass-card p-4 d-flex flex-column justify-content-center">
                     <h5 class="fw-bold text-white mb-3"><i class="bi bi-shield-check text-success me-2"></i> Audit Guidelines</h5>
-                    <p class="text-body">SecureScan provides an automated, non-intrusive evaluation of HTTP Security Headers, SSL/TLS certificate health, cookie protection attributes, and form configuration safety.</p>
+                    <p class="text-body">SecureScan provides an automated, non-intrusive evaluation of HTTP Security Headers, DNS IP resolution, SSL/TLS certificate health, cookie protection attributes, and form configuration safety.</p>
                     <ul class="text-body small ps-3">
                         <li class="mb-1"><strong class="text-danger">High Severity:</strong> Unencrypted HTTP transport, missing HSTS, CSP, or SSL handshake failures.</li>
                         <li class="mb-1"><strong class="text-warning">Medium Severity:</strong> Missing X-Frame-Options, missing HttpOnly/Secure flags, or un-protected forms.</li>
@@ -83,12 +84,13 @@
                     <thead>
                         <tr>
                             <th>ID</th>
+                            <th>Target Host Name</th>
+                            <th>Target IP Address</th>
                             <th>Target URL</th>
                             <th>Date</th>
-                            <th>Duration</th>
                             <th>Score</th>
                             <th>High</th>
-                            <th>Medium</th>
+                            <th>Med</th>
                             <th>Low</th>
                             <th>Actions</th>
                         </tr>
@@ -97,9 +99,10 @@
                         {% for s in scans %}
                         <tr>
                             <td class="text-success fw-bold">#{{ s.id }}</td>
-                            <td class="fw-bold text-white">{{ s.target_url }}</td>
+                            <td class="fw-bold text-white">{{ getattr(s, 'target_name', s.domain) or s.domain }}</td>
+                            <td><code class="text-warning">{{ getattr(s, 'target_ip', 'N/A') or 'N/A' }}</code></td>
+                            <td class="text-white-50 small text-truncate" style="max-width: 180px;" title="{{ s.target_url }}">{{ s.target_url }}</td>
                             <td class="text-white-50 small">{{ s.scan_date.strftime('%Y-%m-%d %H:%M') }}</td>
-                            <td class="text-white-50">{{ s.scan_duration }}s</td>
                             <td>
                                 <span class="badge {{ 'bg-success text-white' if s.risk_score >= 80 else ('bg-warning text-dark' if s.risk_score >= 60 else 'bg-danger text-white') }} fs-6">
                                     {{ s.risk_score }} / 100

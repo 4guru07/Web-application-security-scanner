@@ -11,16 +11,19 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class PassiveScanner:
-    def __init__(self, target_url):
+    def __init__(self, target_url, target_ip='N/A', target_name='N/A'):
         self.target_url = target_url
+        self.target_ip = target_ip
+        self.target_name = target_name
         self.parsed_url = urlparse(target_url)
-        self.hostname = self.parsed_url.hostname
+        self.hostname = self.parsed_url.hostname or target_name
         self.port = self.parsed_url.port or (443 if self.parsed_url.scheme == 'https' else 80)
         self.findings = []
         self.header_audits = []
         self.ssl_info = {}
         self.response = None
         self.connection_failed = False
+
 
     def run_full_scan(self):
         start_time = time.time()
@@ -342,6 +345,8 @@ class PassiveScanner:
 
         return {
             'target_url': self.target_url,
+            'target_name': self.target_name or self.hostname or self.target_url,
+            'target_ip': self.target_ip or 'N/A',
             'domain': self.hostname or self.target_url,
             'scan_duration': duration,
             'risk_score': score,
@@ -354,3 +359,4 @@ class PassiveScanner:
             'header_audits': self.header_audits,
             'ssl_info': self.ssl_info
         }
+

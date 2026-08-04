@@ -16,7 +16,6 @@ try:
 except Exception:
     generate_pdf_report = None
 
-
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'securescan-secret-key-production-auditor'
 
@@ -93,22 +92,23 @@ def index():
 @app.route('/scan', methods=['POST'])
 def start_scan():
     target_input = request.form.get('url', '').strip()
-    is_valid, result = validate_url(target_input)
+    is_valid, normalized_url, ip_address, target_name = validate_url(target_input)
 
     if not is_valid:
-        flash(result, 'error')
+        flash(target_name, 'error')
         return redirect(url_for('index'))
 
-    target_url = result
-    domain = extract_domain(target_url)
+    domain = extract_domain(normalized_url)
 
-    # Execute Audit
-    scanner = PassiveScanner(target_url)
+    # Execute Audit with URL, Domain Name, and IP
+    scanner = PassiveScanner(normalized_url, target_ip=ip_address, target_name=target_name)
     scan_results = scanner.run_full_scan()
 
     # Save to SQLite DB
     new_scan = Scan(
-        target_url=target_url,
+        target_url=normalized_url,
+        target_name=target_name,
+        target_ip=ip_address,
         domain=domain,
         scan_duration=scan_results['scan_duration'],
         risk_score=scan_results['risk_score'],
@@ -161,12 +161,13 @@ def start_scan():
     # Generate PDF Report
     pdf_filename = f"report_scan_{new_scan.id}_{int(datetime.utcnow().timestamp())}.pdf"
     pdf_path = os.path.join(REPORTS_DIR, pdf_filename)
-    try:
-        generate_pdf_report(new_scan, pdf_path)
-        new_scan.report_path = pdf_filename
-        db.session.commit()
-    except Exception:
-        pass
+    if generate_pdf_report:
+        try:
+            generate_pdf_report(new_scan, pdf_path)
+            new_scan.report_path = pdf_filename
+            db.session.commit()
+        except Exception:
+            pass
 
     return redirect(url_for('report_view', scan_id=new_scan.id))
 
@@ -192,7 +193,6 @@ def download_pdf(scan_id):
             flash("PDF generation is unavailable in this environment.", "error")
             return redirect(url_for('report_view', scan_id=scan_id))
 
-
     return send_file(file_path, as_attachment=True, download_name=f"SecureScan_Report_{scan_obj.domain}_{scan_obj.id}.pdf")
 
 @app.route('/reports-hub')
@@ -203,7 +203,12 @@ def reports_hub():
     scans_query = Scan.query
 
     if query:
-        scans_query = scans_query.filter(Scan.target_url.contains(query) | Scan.domain.contains(query))
+        scans_query = scans_query.filter(
+            Scan.target_url.contains(query) | 
+            Scan.domain.contains(query) | 
+            Scan.target_name.contains(query) | 
+            Scan.target_ip.contains(query)
+        )
     if grade_filter:
         scans_query = scans_query.filter(Scan.risk_grade == grade_filter)
 
@@ -218,11 +223,12 @@ def export_csv():
     
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(['ID', 'Target URL', 'Domain', 'Scan Date', 'Duration (s)', 'Risk Score', 'Grade', 'Total Vulnerabilities', 'High', 'Medium', 'Low'])
+    writer.writerow(['ID', 'Target Name / Host', 'Target IP', 'Target URL', 'Scan Date', 'Duration (s)', 'Risk Score', 'Grade', 'Total Vulnerabilities', 'High', 'Medium', 'Low'])
 
     for s in scans:
         writer.writerow([
-            s.id, s.target_url, s.domain, s.scan_date.strftime('%Y-%m-%d %H:%M:%S'),
+            s.id, getattr(s, 'target_name', s.domain), getattr(s, 'target_ip', 'N/A'), s.target_url,
+            s.scan_date.strftime('%Y-%m-%d %H:%M:%S'),
             s.scan_duration, s.risk_score, s.risk_grade, s.total_vulnerabilities,
             s.high_count, s.medium_count, s.low_count
         ])
