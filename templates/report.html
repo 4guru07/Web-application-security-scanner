@@ -31,10 +31,10 @@
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <div>
                     <span class="badge bg-dark text-success border border-success mb-2 px-3 py-1 fw-bold">Executive Audit Report</span>
-                    <h2 class="fw-bold text-white mb-1"><i class="bi bi-shield-check text-success me-2"></i> Security Assessment: {{ getattr(scan, 'target_name', scan.domain) or scan.domain }}</h2>
+                    <h2 class="fw-bold text-white mb-1"><i class="bi bi-shield-check text-success me-2"></i> Security Assessment: {{ scan.target_name or scan.domain }}</h2>
                     <p class="text-high-contrast-muted mb-0">
-                        Target Host: <span class="text-success fw-bold me-3">{{ getattr(scan, 'target_name', scan.domain) }}</span>
-                        Target IP: <code class="text-warning me-3">{{ getattr(scan, 'target_ip', 'N/A') or 'N/A' }}</code>
+                        Target Host: <span class="text-success fw-bold me-3">{{ scan.target_name or scan.domain }}</span>
+                        Target IP: <code class="text-warning me-3">{{ scan.target_ip or 'N/A' }}</code>
                         Target URL: <span class="text-info fw-bold">{{ scan.target_url }}</span>
                     </p>
                 </div>

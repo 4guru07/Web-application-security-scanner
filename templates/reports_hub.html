@@ -80,8 +80,8 @@
                                     <span class="badge {{ 'bg-success text-white' if s.risk_score >= 80 else ('bg-warning text-dark' if s.risk_score >= 60 else 'bg-danger text-white') }} fs-6 mb-2">
                                         Score: {{ s.risk_score }}/100 ({{ s.risk_grade }})
                                     </span>
-                                    <h5 class="fw-bold text-white mb-0 text-truncate" style="max-width: 200px;" title="{{ s.target_url }}">{{ getattr(s, 'target_name', s.domain) or s.domain }}</h5>
-                                    <small class="text-warning fw-mono d-block mt-1">IP: {{ getattr(s, 'target_ip', 'N/A') or 'N/A' }}</small>
+                                    <h5 class="fw-bold text-white mb-0 text-truncate" style="max-width: 200px;" title="{{ s.target_url }}">{{ s.target_name or s.domain }}</h5>
+                                    <small class="text-warning fw-mono d-block mt-1">IP: {{ s.target_ip or 'N/A' }}</small>
                                 </div>
                                 <i class="bi bi-file-earmark-pdf fs-1 text-success"></i>
                             </div>

@@ -95,8 +95,8 @@
                             <tbody>
                                 {% for s in recent_scans %}
                                 <tr>
-                                    <td class="fw-bold text-white"><i class="bi bi-hdd-network text-success me-1"></i> {{ getattr(s, 'target_name', s.domain) or s.domain }}</td>
-                                    <td><code class="text-warning">{{ getattr(s, 'target_ip', 'N/A') or 'N/A' }}</code></td>
+                                    <td class="fw-bold text-white"><i class="bi bi-hdd-network text-success me-1"></i> {{ s.target_name or s.domain }}</td>
+                                    <td><code class="text-warning">{{ s.target_ip or 'N/A' }}</code></td>
                                     <td class="text-white-50 small text-truncate" style="max-width: 220px;" title="{{ s.target_url }}">{{ s.target_url }}</td>
                                     <td class="text-white-50 small">{{ s.scan_date.strftime('%Y-%m-%d %H:%M') }}</td>
                                     <td>
