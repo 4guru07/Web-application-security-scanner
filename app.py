@@ -215,7 +215,7 @@ def download_pdf(scan_id):
             flash("PDF generation is unavailable in this environment.", "error")
             return redirect(url_for('report_view', scan_id=scan_id))
 
-    return send_file(file_path, as_attachment=True, download_name=f"SecureScan_Report_{scan_obj.domain}_{scan_obj.id}.pdf")
+    return send_file(file_path, as_attachment=True, download_name=f"ScanForge_Report_{scan_obj.domain}_{scan_obj.id}.pdf")
 
 @app.route('/reports-hub')
 def reports_hub():
@@ -259,7 +259,7 @@ def export_csv():
     return Response(
         output.getvalue(),
         mimetype="text/csv",
-        headers={"Content-disposition": "attachment; filename=SecureScan_Audit_History.csv"}
+        headers={"Content-disposition": "attachment; filename=ScanForge_Audit_History.csv"}
     )
 
 @app.route('/dashboard')

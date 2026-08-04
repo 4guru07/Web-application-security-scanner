@@ -6,7 +6,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 
 def generate_pdf_report(scan_obj, output_path):
     """
-    Generates a PDF security report using ReportLab.
+    Generates a PDF security report using ReportLab for ScanForge.
     """
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     doc = SimpleDocTemplate(output_path, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
@@ -15,10 +15,10 @@ def generate_pdf_report(scan_obj, output_path):
     
     # Custom Palette
     PRIMARY = colors.HexColor("#0F172A") # Slate dark
-    SECONDARY = colors.HexColor("#2563EB") # Blue
-    HIGH_COLOR = colors.HexColor("#EF4444")
-    MED_COLOR = colors.HexColor("#F59E0B")
-    LOW_COLOR = colors.HexColor("#10B981")
+    SECONDARY = colors.HexColor("#0284C7") # Cyan / Blue
+    HIGH_COLOR = colors.HexColor("#DC2626")
+    MED_COLOR = colors.HexColor("#D97706")
+    LOW_COLOR = colors.HexColor("#059669")
     BG_LIGHT = colors.HexColor("#F8FAFC")
 
     title_style = ParagraphStyle(
@@ -51,12 +51,12 @@ def generate_pdf_report(scan_obj, output_path):
     story = []
 
     # Title & Metadata Header
-    story.append(Paragraph("SecureScan - Executive Security Audit Report", title_style))
+    story.append(Paragraph("ScanForge - Executive Security Audit Report", title_style))
     story.append(HRFlowable(width="100%", thickness=2, color=SECONDARY, spaceAfter=15))
 
     meta_data = [
         [Paragraph(f"<b>Target URL:</b> {scan_obj.target_url}", body_style), Paragraph(f"<b>Scan Date:</b> {scan_obj.scan_date.strftime('%Y-%m-%d %H:%M:%S UTC')}", body_style)],
-        [Paragraph(f"<b>Domain:</b> {scan_obj.domain}", body_style), Paragraph(f"<b>Duration:</b> {scan_obj.scan_duration} seconds", body_style)],
+        [Paragraph(f"<b>Host / Domain:</b> {getattr(scan_obj, 'target_name', scan_obj.domain)}", body_style), Paragraph(f"<b>Target IP:</b> {getattr(scan_obj, 'target_ip', 'N/A')}", body_style)],
         [Paragraph(f"<b>Risk Score:</b> {scan_obj.risk_score} / 100 ({scan_obj.risk_grade})", body_style), Paragraph(f"<b>Total Findings:</b> {scan_obj.total_vulnerabilities}", body_style)]
     ]
     meta_table = Table(meta_data, colWidths=[270, 270])
@@ -96,7 +96,7 @@ def generate_pdf_report(scan_obj, output_path):
     story.append(Paragraph("HTTP Security Headers Matrix", h2_style))
     header_rows = [["Header Name", "Status", "Recommendation"]]
     for ha in scan_obj.header_audits:
-        status_text = f"<font color='{'#10B981' if ha.status == 'Present' else '#EF4444'}'><b>{ha.status}</b></font>"
+        status_text = f"<font color='{'#059669' if ha.status == 'Present' else '#DC2626'}'><b>{ha.status}</b></font>"
         header_rows.append([
             Paragraph(f"<b>{ha.header_name}</b>", body_style),
             Paragraph(status_text, body_style),
