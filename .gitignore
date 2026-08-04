@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+database/securescan.db
+reports/*.pdf
+logs/
+.venv/
+env/
+venv/
+.idea/
+.vscode/

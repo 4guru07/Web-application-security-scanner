@@ -1,0 +1,315 @@
+import socket
+import ssl
+import time
+from datetime import datetime
+from urllib.parse import urlparse, urljoin
+import requests
+from bs4 import BeautifulSoup
+
+class PassiveScanner:
+    def __init__(self, target_url):
+        self.target_url = target_url
+        self.parsed_url = urlparse(target_url)
+        self.hostname = self.parsed_url.hostname
+        self.port = self.parsed_url.port or (443 if self.parsed_url.scheme == 'https' else 80)
+        self.findings = []
+        self.header_audits = []
+        self.ssl_info = {}
+        self.response = None
+
+    def run_full_scan(self):
+        start_time = time.time()
+        
+        # 1. Fetch target response safely
+        try:
+            headers = {'User-Agent': 'SecureScan-Auditor/1.0'}
+            self.response = requests.get(self.target_url, headers=headers, timeout=8, allow_redirects=True)
+        except Exception as e:
+            self.findings.append({
+                'title': 'Target Connectivity Failure',
+                'category': 'Connectivity',
+                'severity': 'High',
+                'description': f'Failed to establish HTTP connection to target: {str(e)}',
+                'recommendation': 'Verify target URL, web server status, and firewall rules.',
+                'details': str(e)
+            })
+            duration = round(time.time() - start_time, 2)
+            score, grade = self._calculate_score()
+            return self._format_results(duration, score, grade)
+
+        # 2. HTTP Security Header Audit
+        self._audit_security_headers()
+
+        # 3. SSL/TLS Audit
+        self._audit_ssl()
+
+        # 4. Cookie Security Flag Audit
+        self._audit_cookies()
+
+        # 5. Form & CSRF Configuration Check
+        self._audit_forms_and_csrf()
+
+        # 6. Robots.txt Compliance Check
+        self._audit_robots_txt()
+
+        duration = round(time.time() - start_time, 2)
+        score, grade = self._calculate_score()
+        return self._format_results(duration, score, grade)
+
+    def _audit_security_headers(self):
+        headers = self.response.headers if self.response else {}
+
+        security_headers_spec = {
+            'Content-Security-Policy': {
+                'severity': 'High',
+                'desc': 'Content-Security-Policy (CSP) header is missing. CSP helps prevent XSS and data injection attacks.',
+                'rec': 'Configure a strong CSP header restricting trusted content sources.'
+            },
+            'Strict-Transport-Security': {
+                'severity': 'High',
+                'desc': 'HTTP Strict Transport Security (HSTS) header is missing. HSTS enforces HTTPS connections.',
+                'rec': 'Enable HSTS with max-age set to at least 31536000 seconds.'
+            },
+            'X-Frame-Options': {
+                'severity': 'Medium',
+                'desc': 'X-Frame-Options header is missing. Pages can be embedded in frames, exposing users to Clickjacking.',
+                'rec': 'Set X-Frame-Options to DENY or SAMEORIGIN.'
+            },
+            'X-Content-Type-Options': {
+                'severity': 'Medium',
+                'desc': 'X-Content-Type-Options header is missing. Browsers may MIME-sniff response types.',
+                'rec': 'Set X-Content-Type-Options to nosniff.'
+            },
+            'Referrer-Policy': {
+                'severity': 'Low',
+                'desc': 'Referrer-Policy header is missing or improperly configured.',
+                'rec': 'Set Referrer-Policy to strict-origin-when-cross-origin or no-referrer.'
+            },
+            'Permissions-Policy': {
+                'severity': 'Low',
+                'desc': 'Permissions-Policy header is missing. Browser features like camera/location are not restricted.',
+                'rec': 'Explicitly define permitted browser APIs via Permissions-Policy.'
+            }
+        }
+
+        for header, spec in security_headers_spec.items():
+            val = headers.get(header)
+            if val:
+                self.header_audits.append({
+                    'header_name': header,
+                    'status': 'Present',
+                    'header_value': val[:200],
+                    'recommendation': 'Header correctly implemented.'
+                })
+            else:
+                self.header_audits.append({
+                    'header_name': header,
+                    'status': 'Missing',
+                    'header_value': None,
+                    'recommendation': spec['rec']
+                })
+                self.findings.append({
+                    'title': f'Missing Security Header: {header}',
+                    'category': 'HTTP Security Headers',
+                    'severity': spec['severity'],
+                    'description': spec['desc'],
+                    'recommendation': spec['rec'],
+                    'details': f'Header `{header}` was not returned in HTTP server response.'
+                })
+
+    def _audit_ssl(self):
+        is_https = self.parsed_url.scheme == 'https'
+        ssl_audit_data = {
+            'is_https': is_https,
+            'certificate_valid': False,
+            'issuer': 'N/A',
+            'expiry_date': 'N/A',
+            'details': ''
+        }
+
+        if not is_https:
+            self.findings.append({
+                'title': 'Unencrypted HTTP Transport',
+                'category': 'Transport Security',
+                'severity': 'High',
+                'description': 'Target site operates over plain HTTP. Data in transit is vulnerable to eavesdropping.',
+                'recommendation': 'Migrate web traffic to HTTPS using TLS certificates.',
+                'details': 'URL scheme is http://'
+            })
+            ssl_audit_data['details'] = 'Site is not using HTTPS.'
+            self.ssl_info = ssl_audit_data
+            return
+
+        # HTTPS Check SSL Socket
+        try:
+            context = ssl.create_default_context()
+            with socket.create_connection((self.hostname, self.port), timeout=5) as sock:
+                with context.wrap_socket(sock, server_hostname=self.hostname) as ssock:
+                    cert = ssock.getpeercert()
+                    
+                    issuer_dict = dict(x[0] for x in cert.get('issuer', []))
+                    issuer = issuer_dict.get('organizationName') or issuer_dict.get('commonName', 'Unknown')
+                    not_after = cert.get('notAfter')
+
+                    ssl_audit_data['certificate_valid'] = True
+                    ssl_audit_data['issuer'] = str(issuer)
+                    ssl_audit_data['expiry_date'] = str(not_after)
+                    ssl_audit_data['details'] = f'TLS Certificate issued by {issuer}, valid until {not_after}.'
+        except Exception as e:
+            ssl_audit_data['certificate_valid'] = False
+            ssl_audit_data['details'] = f'SSL Handshake Error: {str(e)}'
+            self.findings.append({
+                'title': 'Invalid or Misconfigured SSL/TLS Certificate',
+                'category': 'Transport Security',
+                'severity': 'High',
+                'description': f'Failed to validate SSL/TLS certificate: {str(e)}',
+                'recommendation': 'Ensure target has a valid, non-expired TLS certificate from a trusted CA.',
+                'details': str(e)
+            })
+
+        self.ssl_info = ssl_audit_data
+
+    def _audit_cookies(self):
+        if not self.response:
+            return
+
+        cookies = self.response.cookies
+        for cookie in cookies:
+            cookie_name = cookie.name
+            is_httponly = cookie.has_nonstandard_attr('httponly') or cookie.has_nonstandard_attr('HttpOnly') or getattr(cookie, 'httponly', False)
+            is_secure = cookie.secure
+
+            if not is_httponly:
+                self.findings.append({
+                    'title': f'Cookie Missing HttpOnly Flag: {cookie_name}',
+                    'category': 'Cookie Security',
+                    'severity': 'Medium',
+                    'description': f'Cookie `{cookie_name}` is accessible via client-side JavaScript, exposing it to potential theft via XSS.',
+                    'recommendation': 'Set the HttpOnly flag on sensitive cookies.',
+                    'details': f'Cookie Name: {cookie_name}'
+                })
+
+            if not is_secure and self.parsed_url.scheme == 'https':
+                self.findings.append({
+                    'title': f'Cookie Missing Secure Flag: {cookie_name}',
+                    'category': 'Cookie Security',
+                    'severity': 'Medium',
+                    'description': f'Cookie `{cookie_name}` is transmitted over unencrypted HTTP requests.',
+                    'recommendation': 'Set the Secure flag on all cookies when operating over HTTPS.',
+                    'details': f'Cookie Name: {cookie_name}'
+                })
+
+    def _audit_forms_and_csrf(self):
+        if not self.response or 'text/html' not in self.response.headers.get('Content-Type', ''):
+            return
+
+        soup = BeautifulSoup(self.response.text, 'html.parser')
+        forms = soup.find_all('form')
+
+        if not forms:
+            return
+
+        for idx, form in enumerate(forms, 1):
+            action = form.get('action', '')
+            method = form.get('method', 'get').lower()
+            inputs = form.find_all('input')
+            
+            # Check for hidden anti-CSRF token input
+            csrf_token_found = False
+            for inp in inputs:
+                name_attr = inp.get('name', '').lower()
+                id_attr = inp.get('id', '').lower()
+                if any(k in name_attr or k in id_attr for k in ['csrf', 'token', 'xsrf', '_token']):
+                    csrf_token_found = True
+                    break
+
+            if method == 'post' and not csrf_token_found:
+                self.findings.append({
+                    'title': f'Form #{idx} Missing Anti-CSRF Token Indicator',
+                    'category': 'Form Security',
+                    'severity': 'Medium',
+                    'description': f'Form #{idx} uses POST method but lacks a recognized hidden anti-CSRF token parameter.',
+                    'recommendation': 'Implement anti-CSRF tokens for all state-changing HTML forms.',
+                    'details': f'Form Action: {action or "(self)"}, Method: POST'
+                })
+
+            # Form Action over Plain HTTP
+            full_action_url = urljoin(self.target_url, action)
+            if full_action_url.startswith('http://') and self.parsed_url.scheme == 'https':
+                self.findings.append({
+                    'title': f'Form #{idx} Submits to Unencrypted HTTP Destination',
+                    'category': 'Form Security',
+                    'severity': 'High',
+                    'description': f'Form #{idx} target URL ({full_action_url}) uses insecure HTTP transmission.',
+                    'recommendation': 'Ensure all form submission targets use HTTPS.',
+                    'details': f'Action URL: {full_action_url}'
+                })
+
+    def _audit_robots_txt(self):
+        robots_url = urljoin(self.target_url, '/robots.txt')
+        try:
+            res = requests.get(robots_url, timeout=5)
+            if res.status_code == 200:
+                lines = res.text.splitlines()
+                disallowed_paths = [line.split(':')[1].strip() for line in lines if line.lower().startswith('disallow:')]
+                
+                if disallowed_paths:
+                    sensitive_keywords = ['admin', 'backup', 'db', 'private', 'config', 'api', 'v1', 'secret']
+                    found_exposed = [p for p in disallowed_paths if any(k in p.lower() for k in sensitive_keywords)]
+                    
+                    if found_exposed:
+                        self.findings.append({
+                            'title': 'Sensitive Path Disclosed in robots.txt',
+                            'category': 'Information Disclosure',
+                            'severity': 'Low',
+                            'description': f'Robots.txt discloses sensitive pathways: {", ".join(found_exposed[:5])}',
+                            'recommendation': 'Avoid relying on robots.txt to restrict access to sensitive routes. Use authentication/authorization.',
+                            'details': f'Disallowed routes identified: {", ".join(disallowed_paths[:10])}'
+                        })
+        except Exception:
+            pass # Non-critical check
+
+    def _calculate_score(self):
+        # Initial score 100
+        score = 100
+        for f in self.findings:
+            sev = f['severity']
+            if sev == 'High':
+                score -= 15
+            elif sev == 'Medium':
+                score -= 8
+            elif sev == 'Low':
+                score -= 3
+
+        score = max(0, min(100, score))
+
+        if score >= 90:
+            grade = "Excellent"
+        elif score >= 70:
+            grade = "Good"
+        elif score >= 50:
+            grade = "Moderate"
+        else:
+            grade = "Poor"
+
+        return score, grade
+
+    def _format_results(self, duration, score, grade):
+        high_c = sum(1 for f in self.findings if f['severity'] == 'High')
+        med_c = sum(1 for f in self.findings if f['severity'] == 'Medium')
+        low_c = sum(1 for f in self.findings if f['severity'] == 'Low')
+
+        return {
+            'target_url': self.target_url,
+            'domain': self.hostname,
+            'scan_duration': duration,
+            'risk_score': score,
+            'risk_grade': grade,
+            'total_vulnerabilities': len(self.findings),
+            'high_count': high_c,
+            'medium_count': med_c,
+            'low_count': low_c,
+            'findings': self.findings,
+            'header_audits': self.header_audits,
+            'ssl_info': self.ssl_info
+        }
