@@ -10,7 +10,12 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, s
 from database import db, Scan, Finding, HeaderAudit, SslAudit
 from scanner import PassiveScanner
 from utils import validate_url, extract_domain
-from report import generate_pdf_report
+
+try:
+    from report import generate_pdf_report
+except Exception:
+    generate_pdf_report = None
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'securescan-secret-key-production-auditor'
@@ -180,8 +185,13 @@ def download_pdf(scan_id):
         return redirect(url_for('report_view', scan_id=scan_id))
 
     file_path = os.path.join(REPORTS_DIR, scan_obj.report_path)
-    if not os.path.exists(file_path):
-        generate_pdf_report(scan_obj, file_path)
+    if generate_pdf_report:
+        try:
+            generate_pdf_report(scan_obj, file_path)
+        except Exception:
+            flash("PDF generation is unavailable in this environment.", "error")
+            return redirect(url_for('report_view', scan_id=scan_id))
+
 
     return send_file(file_path, as_attachment=True, download_name=f"SecureScan_Report_{scan_obj.domain}_{scan_obj.id}.pdf")
 
